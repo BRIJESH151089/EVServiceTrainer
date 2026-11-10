@@ -3,8 +3,7 @@
     "rootNamespace": "EVTrainer.UI",
     "references": [
         "EVTrainer.Core",
-        "UnityEngine.UI",
-        "Unity.TextMeshPro"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
