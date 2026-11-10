@@ -1,0 +1,21 @@
+{
+    "name": "EVTrainer.XR",
+    "rootNamespace": "EVTrainer.XR",
+    "references": [
+        "EVTrainer.Core",
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.XR.OpenXR",
+        "Unity.XR.Hands",
+        "Unity.XR.CoreUtils",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

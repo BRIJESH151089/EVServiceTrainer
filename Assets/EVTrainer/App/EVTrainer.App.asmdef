@@ -1,0 +1,19 @@
+{
+    "name": "EVTrainer.App",
+    "rootNamespace": "EVTrainer.App",
+    "references": [
+        "EVTrainer.Core",
+        "EVTrainer.XR",
+        "EVTrainer.Rendering",
+        "EVTrainer.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
