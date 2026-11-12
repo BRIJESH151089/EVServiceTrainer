@@ -26,6 +26,8 @@ namespace EVTrainer.UI
         [SerializeField] private Color _goodStatus = new Color(0.08f, 0.5f, 0.2f, 0.95f);
         [SerializeField] private Color _badStatus = new Color(0.6f, 0.15f, 0.1f, 0.95f);
 
+        [SerializeField] private Color _warningStatus = new Color(0.62f, 0.42f, 0.05f, 0.95f);
+
         private const string DoneColor = "#7FD88F";
         private const string CurrentColor = "#FFD34D";
         private const string PendingColor = "#9AA0A8";
@@ -68,6 +70,13 @@ namespace EVTrainer.UI
 
             if (_status != null) _status.text = status;
             if (_statusBackground != null) _statusBackground.color = statusColor;
+        }
+
+        /// <summary>Temporary status line (e.g. "Heavy part: use both hands"); the next Render replaces it.</summary>
+        public void ShowNotice(string text, bool warning)
+        {
+            if (_status != null) _status.text = text;
+            if (_statusBackground != null) _statusBackground.color = warning ? _warningStatus : _neutralStatus;
         }
 
         private string BuildStepList(AssemblyProgress progress)

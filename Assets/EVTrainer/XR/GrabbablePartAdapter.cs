@@ -75,8 +75,15 @@ namespace EVTrainer.XR
         /// (e.g. hand tracking lost) so a drop caused by tracking loss never installs a part.</summary>
         public event Action<GrabbablePartAdapter, PartRelease> Released;
 
-        private void Awake()
+        private bool _initialised;
+
+        private void Awake() => EnsureInitialised();
+
+        // Other scripts may configure this part from their own Awake, before ours has run.
+        private void EnsureInitialised()
         {
+            if (_initialised) return;
+            _initialised = true;
             _grab = GetComponent<XRGrabInteractable>();
             _rigidbody = GetComponent<Rigidbody>();
             _stagingPose = CurrentPose;
@@ -97,24 +104,85 @@ namespace EVTrainer.XR
         /// <summary>Allows or blocks grabbing (e.g. before a training mode is chosen). Ignored once locked.</summary>
         public void SetGrabbable(bool grabbable)
         {
+            EnsureInitialised();
             if (IsLocked) return;
             _grab.enabled = grabbable;
+        }
+
+        /// <summary>
+        /// Heavy part: it only moves while two interactors (controllers, hands, or one of each) hold it.
+        /// One grab leaves it where it is and raises <see cref="SecondHandNeeded"/>; letting go with either
+        /// hand while lifting drops it and counts as the release.
+        /// </summary>
+        public void SetRequiresTwoHands(bool requiresTwoHands)
+        {
+            EnsureInitialised();
+            RequiresTwoHands = requiresTwoHands;
+            _grab.selectMode = requiresTwoHands ? InteractableSelectMode.Multiple : InteractableSelectMode.Single;
+            SetTracking(!requiresTwoHands);
+        }
+
+        public bool RequiresTwoHands { get; private set; }
+
+        /// <summary>True while the trainee is actually carrying the part (held, and by two hands if it needs two).</summary>
+        public bool IsCarried => IsHeld && (!RequiresTwoHands || _lifted);
+
+        /// <summary>Raised when a two-hand part is grabbed with only one hand.</summary>
+        public event Action<GrabbablePartAdapter> SecondHandNeeded;
+
+        private bool _lifted;
+
+        private void SetTracking(bool track)
+        {
+            _grab.trackPosition = track;
+            _grab.trackRotation = track;
         }
 
         private void OnSelectEntered(SelectEnterEventArgs args)
         {
             _lastInteractor = args.interactorObject;
             Refresh();
+            if (!RequiresTwoHands) return;
+
+            if (_grab.interactorsSelecting.Count >= 2)
+            {
+                _lifted = true;
+                SetTracking(true);
+            }
+            else
+            {
+                SetTracking(false); // stays put until the second hand grabs
+                SecondHandNeeded?.Invoke(this);
+            }
         }
 
         private void OnSelectExited(SelectExitEventArgs args)
         {
             Refresh();
-            if (args.isCanceled || IsLocked) return;
-
             var interactor = args.interactorObject;
+
+            if (RequiresTwoHands)
+            {
+                if (!_lifted) return; // one-hand grab ended: it never moved, nothing to judge
+                _lifted = false;
+                SetTracking(false);
+                // Drop it: the remaining hand lets go too (next frame, outside XRI's event processing).
+                StartCoroutine(ReleaseRemainingNextFrame());
+            }
+
+            if (args.isCanceled || IsLocked) return;
             _lastInteractor = interactor;
             Released?.Invoke(this, new PartRelease(_partTypeId, ItemId, CurrentPose, SourceOf(interactor), HandOf(interactor)));
+        }
+
+        private IEnumerator ReleaseRemainingNextFrame()
+        {
+            yield return null;
+            var manager = _grab.interactionManager;
+            if (manager == null) yield break;
+            var remaining = new System.Collections.Generic.List<IXRSelectInteractor>(_grab.interactorsSelecting);
+            foreach (var interactor in remaining)
+                manager.SelectExit(interactor, (IXRSelectInteractable)_grab);
         }
 
         /// <summary>
@@ -154,6 +222,7 @@ namespace EVTrainer.XR
         public void ReturnToStaging(float duration)
         {
             if (IsLocked) return;
+            _lifted = false;
             StartMove(_stagingPose, duration, staysLocked: false);
         }
 

@@ -71,8 +71,14 @@ namespace EVTrainer.App
             _definition = _module.ToCore(_assemblyOrigin);
             foreach (var part in _parts)
             {
-                if (_definition.SlotsOfType(part.PartTypeId).Count == 0)
+                var slots = _definition.SlotsOfType(part.PartTypeId);
+                if (slots.Count == 0)
+                {
                     Debug.LogError($"Part type '{part.PartTypeId}' on {part.name} is not in module '{_definition.Id}'.", part);
+                    continue;
+                }
+                // Heavy parts (module data) can only be lifted with two hands.
+                part.SetRequiresTwoHands(slots[0].RequiresTwoHands);
             }
 
             if (_ghosts != null)
@@ -123,12 +129,27 @@ namespace EVTrainer.App
 
         private void OnEnable()
         {
-            foreach (var part in _parts) part.Released += OnPartReleased;
+            foreach (var part in _parts)
+            {
+                part.Released += OnPartReleased;
+                part.SecondHandNeeded += OnSecondHandNeeded;
+            }
         }
 
         private void OnDisable()
         {
-            foreach (var part in _parts) part.Released -= OnPartReleased;
+            foreach (var part in _parts)
+            {
+                part.Released -= OnPartReleased;
+                part.SecondHandNeeded -= OnSecondHandNeeded;
+            }
+        }
+
+        private void OnSecondHandNeeded(GrabbablePartAdapter part)
+        {
+            if (_hud != null) _hud.ShowNotice("Heavy part: use both hands.", warning: true);
+            _lastInstallText = $"Heavy part: use both hands ({part.ItemId}).";
+            _nextPanelRefresh = 0f;
         }
 
         private void OnPartReleased(GrabbablePartAdapter part, PartRelease release)
@@ -156,7 +177,7 @@ namespace EVTrainer.App
             while (Time.time - start < _settleMaxSeconds)
             {
                 yield return waitPhysics;
-                if (part.IsHeld || part.IsLocked) yield break; // trainee took it back; that release is void
+                if (part.IsCarried || part.IsLocked) yield break; // trainee took it back; that release is void
                 if (Time.time - start < _settleMinSeconds) continue;
                 settledSteps = part.IsSettled(_settleLinearSpeed, _settleAngularSpeed) ? settledSteps + 1 : 0;
                 if (settledSteps >= 3) break;
@@ -215,7 +236,7 @@ namespace EVTrainer.App
             _lastEvaluation = null;
             foreach (var part in _parts)
             {
-                if (!part.IsHeld || part.IsLocked) continue;
+                if (!part.IsCarried || part.IsLocked) continue;
                 var e = Progress.Evaluate(part.PartTypeId, part.CurrentPose);
                 _lastEvaluation = e;
                 if (e.IsInstalled) ready = e.PartId;
