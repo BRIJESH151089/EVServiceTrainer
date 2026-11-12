@@ -1,19 +1,37 @@
 using System.Globalization;
-using System.Text;
 using EVTrainer.Core;
 
 namespace EVTrainer.UI
 {
-    /// <summary>Short trainee-facing explanation of an install attempt.</summary>
+    /// <summary>
+    /// Trainee-facing text for an install attempt. Learn mode explains (distances, reasons, hints);
+    /// Test mode only says whether the part was accepted.
+    /// </summary>
     public static class InstallResultText
     {
-        public static string Describe(in InstallResult result, AssemblyDefinition definition)
+        public static string Describe(in InstallResult result, AssemblyDefinition definition,
+            TrainingMode mode = TrainingMode.Learn)
         {
-            var c = CultureInfo.InvariantCulture;
             definition.TryGetPart(result.PartId, out var part);
             string name = part != null ? part.DisplayName : result.PartId;
-            var e = result.Evaluation;
+            return mode == TrainingMode.Test ? Short(result, name) : Detailed(result, part, name);
+        }
 
+        private static string Short(in InstallResult result, string name)
+        {
+            switch (result.Outcome)
+            {
+                case InstallOutcome.Installed: return $"{name} installed.";
+                case InstallOutcome.AlreadyInstalled: return $"{name} is already installed.";
+                case InstallOutcome.WrongOrder: return "Cannot be fitted yet.";
+                default: return "Not fitted correctly.";
+            }
+        }
+
+        private static string Detailed(in InstallResult result, PartSpec part, string name)
+        {
+            var c = CultureInfo.InvariantCulture;
+            var e = result.Evaluation;
             switch (result.Outcome)
             {
                 case InstallOutcome.Installed:
@@ -27,13 +45,7 @@ namespace EVTrainer.UI
                     return string.Format(c, "{0} wrong way round: turned {1:0} deg (max {2:0} deg). Rotate it to match the outline.",
                         name, e.AngleErrorDegrees, part != null ? part.AngleToleranceDegrees : 0f);
                 case InstallOutcome.WrongOrder:
-                    var sb = new StringBuilder();
-                    foreach (var id in result.MissingPrerequisites)
-                    {
-                        if (sb.Length > 0) sb.Append(", ");
-                        sb.Append(definition.TryGetPart(id, out var missing) ? missing.DisplayName : id);
-                    }
-                    return $"Wrong order: fit {sb} before the {name}.";
+                    return "Wrong order: " + result.Reason + " Part returned to its place.";
                 default:
                     return result.ToString();
             }

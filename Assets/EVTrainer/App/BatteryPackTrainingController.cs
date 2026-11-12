@@ -27,6 +27,12 @@ namespace EVTrainer.App
         [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.6f;
         [SerializeField, Min(0f)] private float _hapticSeconds = 0.08f;
 
+        [Header("Wrong order")]
+        [Tooltip("Time to carry a wrong-order part back to its staging position.")]
+        [SerializeField, Min(0f)] private float _returnSeconds = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _rejectHapticAmplitude = 1f;
+        [SerializeField, Min(0f)] private float _rejectHapticSeconds = 0.25f;
+
         [Header("Settle re-check (part dropped just above its seat)")]
         [SerializeField, Min(0f)] private float _settleMaxHeightMetres = SettleRetryRule.DefaultMaxHeightAboveTargetMetres;
         [Tooltip("Give the part at least this long to fall before testing whether it has settled.")]
@@ -163,7 +169,7 @@ namespace EVTrainer.App
         private void ApplyResult(GrabbablePartAdapter part, PartRelease release, InstallResult result, bool afterSettling)
         {
             LastResult = result;
-            _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} " +
+            _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} [{result.Outcome}] " +
                                $"({release.ItemId}, {release.Source}, {release.Hand}{(afterSettling ? ", after settling" : "")})";
 
             if (result.IsInstalled)
@@ -173,6 +179,12 @@ namespace EVTrainer.App
                 var feedback = part.GetComponent<SnapFeedback>();
                 if (feedback != null) feedback.PlayInstalled();
                 RefreshGhosts();
+            }
+            else if (result.Outcome == InstallOutcome.WrongOrder)
+            {
+                // Not allowed yet: the part goes back where it came from, with a strong buzz.
+                part.ReturnToStaging(_returnSeconds);
+                part.PulseReleasingController(_rejectHapticAmplitude, _rejectHapticSeconds);
             }
 
             RefreshHud();

@@ -48,13 +48,13 @@ namespace EVTrainer.UI
             if (progress.IsComplete && (lastResult == null || lastResult.Value.IsInstalled))
             {
                 status = lastResult.HasValue
-                    ? InstallResultText.Describe(lastResult.Value, definition) + " Module complete."
+                    ? InstallResultText.Describe(lastResult.Value, definition, progress.Mode) + " Module complete."
                     : "Module complete.";
                 statusColor = _goodStatus;
             }
             else if (lastResult.HasValue)
             {
-                status = InstallResultText.Describe(lastResult.Value, definition);
+                status = InstallResultText.Describe(lastResult.Value, definition, progress.Mode);
                 statusColor = lastResult.Value.IsInstalled ? _goodStatus : _badStatus;
             }
             else

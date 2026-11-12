@@ -147,6 +147,19 @@ namespace EVTrainer.XR
             StartMove(target, duration, staysLocked: true);
         }
 
+        /// <summary>
+        /// Smoothly carries the part back to where it was laid out (e.g. after a wrong-order release).
+        /// It cannot be grabbed while moving and is a normal physics part again afterwards.
+        /// </summary>
+        public void ReturnToStaging(float duration)
+        {
+            if (IsLocked) return;
+            StartMove(_stagingPose, duration, staysLocked: false);
+        }
+
+        /// <summary>True while the part is being carried back to its staging position.</summary>
+        public bool IsReturning => _moveRoutine != null && !IsLocked;
+
         private void StartMove(PartPose target, float duration, bool staysLocked)
         {
             if (_moveRoutine != null) StopCoroutine(_moveRoutine);
