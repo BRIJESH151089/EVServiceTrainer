@@ -23,7 +23,45 @@ namespace EVTrainer.Core
             {
                 if (part.PreInstalled) MarkInstalled(part.Id);
             }
+            foreach (var set in definition.BoltSets)
+            {
+                // Learn blocks out-of-pattern torquing; Test allows it and only logs it.
+                var bolts = new BoltSet(set, blockOutOfOrder: mode == TrainingMode.Learn, Mistakes);
+                _boltSets.Add(bolts);
+                _boltSetsById.Add(set.Id, bolts);
+            }
         }
+
+        private readonly List<BoltSet> _boltSets = new List<BoltSet>();
+        private readonly Dictionary<string, BoltSet> _boltSetsById = new Dictionary<string, BoltSet>(StringComparer.Ordinal);
+
+        /// <summary>Run-time bolt sets, in definition order.</summary>
+        public IReadOnlyList<BoltSet> BoltSets => _boltSets;
+
+        public BoltSet GetBoltSet(string id)
+        {
+            if (id == null || !_boltSetsById.TryGetValue(id, out var set))
+                throw new ArgumentException($"Unknown bolt set '{id}'.", nameof(id));
+            return set;
+        }
+
+        /// <summary>Bolts can go in once the part they fasten is installed.</summary>
+        public bool AreBoltsAvailable(BoltSet set) =>
+            set.Spec.PrerequisitePartId == null || _installed.Contains(set.Spec.PrerequisitePartId);
+
+        /// <summary>Done count of a step: installed slots, seated bolts (hand-start) or finished bolts (torque).</summary>
+        public int CompletedCount(AssemblyStep step)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            switch (step.Kind)
+            {
+                case StepKind.HandStartBolts: return GetBoltSet(step.BoltSet.Id).SeatedCount;
+                case StepKind.TorqueBolts: return GetBoltSet(step.BoltSet.Id).FinishedCount;
+                default: return InstalledCount(step);
+            }
+        }
+
+        public bool IsStepComplete(AssemblyStep step) => CompletedCount(step) >= step.Size;
 
         public AssemblyDefinition Definition { get; }
         public TrainingMode Mode { get; }
@@ -56,20 +94,29 @@ namespace EVTrainer.Core
             }
         }
 
-        /// <summary>The first procedure step with an uninstalled slot, or null when complete.</summary>
+        /// <summary>The first procedure step that is not complete, or null when everything is done.</summary>
         public AssemblyStep CurrentStep
         {
             get
             {
                 foreach (var step in Definition.Steps)
                 {
-                    if (InstalledCount(step) < step.Slots.Count) return step;
+                    if (!IsStepComplete(step)) return step;
                 }
                 return null;
             }
         }
 
-        public bool IsComplete => _installed.Count == Definition.Parts.Count;
+        /// <summary>All parts installed and every bolt set finished (Torqued, or OverTorqued which is logged).</summary>
+        public bool IsComplete
+        {
+            get
+            {
+                if (_installed.Count != Definition.Parts.Count) return false;
+                foreach (var set in _boltSets) if (!set.IsComplete) return false;
+                return true;
+            }
+        }
 
         public bool IsInstalled(string partId) => _installed.Contains(partId);
 

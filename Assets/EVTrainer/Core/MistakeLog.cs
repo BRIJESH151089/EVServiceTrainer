@@ -11,6 +11,14 @@ namespace EVTrainer.Core
         WrongOrientation,
         /// <summary>Released too far from its seat.</summary>
         NotSeated,
+        /// <summary>A bolt started at too steep an angle and jammed.</summary>
+        CrossThread,
+        /// <summary>A bolt torqued out of the tightening pattern order.</summary>
+        WrongSequence,
+        /// <summary>A bolt torqued above spec + tolerance.</summary>
+        OverTorque,
+        /// <summary>The wrench was used before every bolt was hand-started.</summary>
+        TorqueBeforeAllSeated,
     }
 
     /// <summary>One logged mistake. Time is seconds since the run started (supplied by the caller).</summary>
