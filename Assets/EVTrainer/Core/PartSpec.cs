@@ -13,7 +13,9 @@ namespace EVTrainer.Core
             float positionToleranceMetres,
             float angleToleranceDegrees,
             bool requiresTwoHands = false,
-            IEnumerable<string> prerequisites = null)
+            IEnumerable<string> prerequisites = null,
+            bool preInstalled = false,
+            string instruction = null)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Part id is required.", nameof(id));
             if (positionToleranceMetres < 0f) throw new ArgumentOutOfRangeException(nameof(positionToleranceMetres));
@@ -26,6 +28,8 @@ namespace EVTrainer.Core
             AngleToleranceDegrees = angleToleranceDegrees;
             RequiresTwoHands = requiresTwoHands;
             Prerequisites = new List<string>(prerequisites ?? Array.Empty<string>()).AsReadOnly();
+            PreInstalled = preInstalled;
+            Instruction = string.IsNullOrWhiteSpace(instruction) ? "Fit " + DisplayName : instruction;
         }
 
         public string Id { get; }
@@ -37,5 +41,11 @@ namespace EVTrainer.Core
 
         /// <summary>Ids of parts that must be installed before this one.</summary>
         public IReadOnlyList<string> Prerequisites { get; }
+
+        /// <summary>True for parts already in place when training starts (e.g. the pack tray on the fixture).</summary>
+        public bool PreInstalled { get; }
+
+        /// <summary>Step text shown to the trainee, e.g. "Fit cooling plate".</summary>
+        public string Instruction { get; }
     }
 }

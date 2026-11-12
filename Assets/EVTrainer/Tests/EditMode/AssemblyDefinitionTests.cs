@@ -28,5 +28,14 @@ namespace EVTrainer.Tests.EditMode
             Assert.Throws<ArgumentException>(() =>
                 new AssemblyDefinition("a", "A", new[] { Part("x"), Part("x") }));
         }
+
+        [Test]
+        public void UnknownOrSelfPrerequisite_Throws()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                new AssemblyDefinition("a", "A", new[] { Part("x", "missing") }));
+            Assert.Throws<ArgumentException>(() =>
+                new AssemblyDefinition("a", "A", new[] { Part("x", "x") }));
+        }
     }
 }

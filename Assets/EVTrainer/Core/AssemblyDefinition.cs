@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EVTrainer.Core
 {
-    /// <summary>Data describing one assembly task (e.g. the battery pack). Phase 1: parts only.</summary>
+    /// <summary>Data describing one assembly task (e.g. the battery pack). Parts are listed in procedure order.</summary>
     public sealed class AssemblyDefinition
     {
         private readonly Dictionary<string, PartSpec> _partsById;
@@ -24,6 +24,16 @@ namespace EVTrainer.Core
                 if (_partsById.ContainsKey(part.Id)) throw new ArgumentException($"Duplicate part id '{part.Id}'.", nameof(parts));
                 _partsById.Add(part.Id, part);
                 list.Add(part);
+            }
+            foreach (var part in list)
+            {
+                foreach (var prerequisite in part.Prerequisites)
+                {
+                    if (prerequisite == part.Id)
+                        throw new ArgumentException($"Part '{part.Id}' lists itself as a prerequisite.", nameof(parts));
+                    if (!_partsById.ContainsKey(prerequisite))
+                        throw new ArgumentException($"Part '{part.Id}' has unknown prerequisite '{prerequisite}'.", nameof(parts));
+                }
             }
             Parts = list.AsReadOnly();
         }
