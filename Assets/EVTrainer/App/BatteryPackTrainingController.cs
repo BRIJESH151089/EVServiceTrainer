@@ -26,8 +26,13 @@ namespace EVTrainer.App
         [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.6f;
         [SerializeField, Min(0f)] private float _hapticSeconds = 0.08f;
 
+        [Header("HUD")]
+        [SerializeField] private TrainingHudView _hud;
+
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
+        [Tooltip("Shows/hides the debug panel (left X button; F2 in the Editor).")]
+        [SerializeField] private ButtonActionAdapter _debugToggle;
         [SerializeField] private ControllerInputAdapter _leftInput;
         [SerializeField] private ControllerInputAdapter _rightInput;
         [SerializeField] private HandTrackingAdapter _leftHand;
@@ -65,7 +70,16 @@ namespace EVTrainer.App
             }
         }
 
-        private void Start() => RefreshGhost();
+        private void Start()
+        {
+            RefreshGhost();
+            RefreshHud();
+        }
+
+        private void RefreshHud()
+        {
+            if (_hud != null) _hud.Render(Progress, LastResult);
+        }
 
         /// <summary>Learn mode: outline only the current part, and only while it can be fitted.</summary>
         private void RefreshGhost()
@@ -104,6 +118,7 @@ namespace EVTrainer.App
                 RefreshGhost();
             }
 
+            RefreshHud();
             _nextPanelRefresh = 0f; // show the result immediately
         }
 
@@ -111,6 +126,12 @@ namespace EVTrainer.App
         {
             RenderHand(_leftHand, _leftHandVisual);
             RenderHand(_rightHand, _rightHandVisual);
+
+            if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
+            {
+                _debugPanel.gameObject.SetActive(!_debugPanel.gameObject.activeSelf);
+                _nextPanelRefresh = 0f;
+            }
             UpdateDebugPanel();
         }
 
