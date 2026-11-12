@@ -14,13 +14,20 @@ namespace EVTrainer.App
     [CreateAssetMenu(menuName = "EV Trainer/Assembly Module", fileName = "AssemblyModule")]
     public sealed class AssemblyModuleDefinition : ScriptableObject
     {
+        /// <summary>One SLOT. Identical parts share a type id and can go into any free slot of that type.</summary>
         [Serializable]
         public sealed class PartEntry
         {
+            [Tooltip("Slot id, unique in the module (e.g. module_2).")]
             public string id;
+            [Tooltip("Part type. Empty = the slot id (a unique part). Identical parts share a type (e.g. battery_module).")]
+            public string typeId;
             public string displayName;
-            [Tooltip("Step text in the HUD. Empty = \"Fit <display name>\".")]
+            [Tooltip("Name of the part type in sentences, e.g. \"battery modules\". Empty = display name.")]
+            public string groupName;
+            [Tooltip("Step text in the HUD, shared by consecutive slots of one type. Empty = \"Fit <display name>\".")]
             public string instruction;
+            public PartSymmetry symmetry;
             [Tooltip("Target position relative to the assembly origin (metres).")]
             public Vector3 localPosition;
             [Tooltip("Target rotation relative to the assembly origin (Euler degrees).")]
@@ -56,7 +63,8 @@ namespace EVTrainer.App
                     p.id, p.displayName,
                     new PartPose(worldPosition.ToNumerics(), worldRotation.ToNumerics()),
                     p.positionToleranceMetres, p.angleToleranceDegrees,
-                    p.requiresTwoHands, p.prerequisites, p.preInstalled, p.instruction));
+                    p.requiresTwoHands, p.prerequisites, p.preInstalled, p.instruction,
+                    p.typeId, p.groupName, p.symmetry));
             }
             return new AssemblyDefinition(_id, _title, specs);
         }

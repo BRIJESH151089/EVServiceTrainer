@@ -16,8 +16,11 @@ MonoBehaviour:
   _title: EV Battery Pack Assembly
   _parts:
   - id: pack_tray
+    typeId: 
     displayName: Pack tray
+    groupName: pack tray
     instruction: Place pack tray on fixture
+    symmetry: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     positionToleranceMetres: 0.02
@@ -26,8 +29,11 @@ MonoBehaviour:
     preInstalled: 1
     prerequisites: []
   - id: cooling_plate
+    typeId: 
     displayName: Cooling plate
+    groupName: cooling plate
     instruction: Fit cooling plate
+    symmetry: 0
     localPosition: {x: 0, y: 0.016, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     positionToleranceMetres: 0.015
@@ -36,3 +42,148 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - pack_tray
+  - id: module_1
+    typeId: battery_module
+    displayName: Battery module 1
+    groupName: battery modules
+    instruction: Install battery modules
+    symmetry: 0
+    localPosition: {x: -0.21, y: 0.062, z: 0.01}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.012
+    angleToleranceDegrees: 8
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - cooling_plate
+  - id: module_2
+    typeId: battery_module
+    displayName: Battery module 2
+    groupName: battery modules
+    instruction: Install battery modules
+    symmetry: 0
+    localPosition: {x: -0.06999999, y: 0.062, z: 0.01}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.012
+    angleToleranceDegrees: 8
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - cooling_plate
+  - id: module_3
+    typeId: battery_module
+    displayName: Battery module 3
+    groupName: battery modules
+    instruction: Install battery modules
+    symmetry: 0
+    localPosition: {x: 0.07000001, y: 0.062, z: 0.01}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.012
+    angleToleranceDegrees: 8
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - cooling_plate
+  - id: module_4
+    typeId: battery_module
+    displayName: Battery module 4
+    groupName: battery modules
+    instruction: Install battery modules
+    symmetry: 0
+    localPosition: {x: 0.21000001, y: 0.062, z: 0.01}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.012
+    angleToleranceDegrees: 8
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - cooling_plate
+  - id: busbar_1
+    typeId: busbar
+    displayName: Busbar 1
+    groupName: busbars
+    instruction: Connect busbars
+    symmetry: 1
+    localPosition: {x: -0.14, y: 0.116, z: -0.08}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.008
+    angleToleranceDegrees: 6
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - module_1
+    - module_2
+  - id: busbar_2
+    typeId: busbar
+    displayName: Busbar 2
+    groupName: busbars
+    instruction: Connect busbars
+    symmetry: 1
+    localPosition: {x: 0, y: 0.116, z: -0.08}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.008
+    angleToleranceDegrees: 6
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - module_2
+    - module_3
+  - id: busbar_3
+    typeId: busbar
+    displayName: Busbar 3
+    groupName: busbars
+    instruction: Connect busbars
+    symmetry: 1
+    localPosition: {x: 0.14, y: 0.116, z: -0.08}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.008
+    angleToleranceDegrees: 6
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - module_3
+    - module_4
+  - id: bms
+    typeId: 
+    displayName: BMS board
+    groupName: BMS board
+    instruction: Mount BMS board
+    symmetry: 0
+    localPosition: {x: 0, y: 0.106, z: 0.07}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.01
+    angleToleranceDegrees: 6
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - busbar_1
+    - busbar_2
+    - busbar_3
+  - id: hv_connector
+    typeId: 
+    displayName: HV connector
+    groupName: HV connector
+    instruction: Fit HV connector (last HV link)
+    symmetry: 0
+    localPosition: {x: 0, y: 0.09, z: -0.215}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.008
+    angleToleranceDegrees: 6
+    requiresTwoHands: 0
+    preInstalled: 0
+    prerequisites:
+    - bms
+  - id: cover
+    typeId: 
+    displayName: Pack cover
+    groupName: pack cover
+    instruction: Place pack cover (two hands)
+    symmetry: 1
+    localPosition: {x: 0, y: 0.135, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    positionToleranceMetres: 0.015
+    angleToleranceDegrees: 8
+    requiresTwoHands: 1
+    preInstalled: 0
+    prerequisites:
+    - hv_connector

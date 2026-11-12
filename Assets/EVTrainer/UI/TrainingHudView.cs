@@ -72,19 +72,24 @@ namespace EVTrainer.UI
 
         private string BuildStepList(AssemblyProgress progress)
         {
+            // One line per step; steps with several identical parts show a count, e.g. "Install battery modules (2/4)".
             _sb.Clear();
-            var parts = progress.Definition.Parts;
-            int current = progress.CurrentStepIndex;
-            for (int i = 0; i < parts.Count; i++)
+            var steps = progress.Definition.Steps;
+            var current = progress.CurrentStep;
+            for (int i = 0; i < steps.Count; i++)
             {
-                var part = parts[i];
-                if (progress.IsInstalled(part.Id))
-                    _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(part.Instruction).Append("</color>");
-                else if (i == current)
-                    _sb.Append("<color=").Append(CurrentColor).Append("><b>></b>    <b>").Append(part.Instruction).Append("</b></color>");
+                var step = steps[i];
+                int done = progress.InstalledCount(step);
+                bool complete = done == step.Slots.Count;
+                string text = step.Slots.Count > 1 ? $"{step.Instruction} ({done}/{step.Slots.Count})" : step.Instruction;
+
+                if (complete)
+                    _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(text).Append("</color>");
+                else if (step == current)
+                    _sb.Append("<color=").Append(CurrentColor).Append("><b>></b>    <b>").Append(text).Append("</b></color>");
                 else
-                    _sb.Append("<color=").Append(PendingColor).Append(">[  ]  ").Append(part.Instruction).Append("</color>");
-                if (i < parts.Count - 1) _sb.Append('\n');
+                    _sb.Append("<color=").Append(PendingColor).Append(">[  ]  ").Append(text).Append("</color>");
+                if (i < steps.Count - 1) _sb.Append('\n');
             }
             return _sb.ToString();
         }
