@@ -12,6 +12,8 @@ namespace EVTrainer.Core
     {
         private readonly HashSet<string> _installed = new HashSet<string>(StringComparer.Ordinal);
         private readonly List<string> _installOrder = new List<string>();
+        private readonly List<InstallRecord> _installRecords = new List<InstallRecord>();
+        private readonly Dictionary<string, int> _failedAttempts = new Dictionary<string, int>(StringComparer.Ordinal);
 
         public AssemblyProgress(AssemblyDefinition definition, TrainingMode mode)
         {
@@ -134,13 +136,47 @@ namespace EVTrainer.Core
 
         /// <summary>
         /// Attempts to install a part of <paramref name="typeId"/> released at <paramref name="pose"/>
-        /// (see <see cref="Evaluate"/>). On success the chosen slot becomes installed.
+        /// (see <see cref="Evaluate"/>). On success the chosen slot becomes installed. Every attempt is
+        /// tracked: failures go to <see cref="Mistakes"/>, successes to <see cref="InstallRecords"/>.
         /// </summary>
-        public InstallResult TryInstall(string typeId, PartPose pose)
+        /// <param name="timeSeconds">Run time of the attempt, for the logs.</param>
+        /// <param name="itemId">The physical part released (identical parts are told apart by this);
+        /// attempts are counted per item. Defaults to the type id.</param>
+        public InstallResult TryInstall(string typeId, PartPose pose, double timeSeconds = 0, string itemId = null)
         {
             var result = Evaluate(typeId, pose);
-            if (result.IsInstalled) MarkInstalled(result.PartId);
+            string item = string.IsNullOrEmpty(itemId) ? typeId : itemId;
+
+            if (result.IsInstalled)
+            {
+                MarkInstalled(result.PartId);
+                _failedAttempts.TryGetValue(item, out int failed);
+                _installRecords.Add(new InstallRecord(result.PartId, typeId, item, timeSeconds, failed + 1));
+            }
+            else if (MistakeLog.TryGetKind(result.Outcome, out var kind))
+            {
+                _failedAttempts.TryGetValue(item, out int failed);
+                _failedAttempts[item] = failed + 1;
+                Mistakes.Record(new MistakeEntry(timeSeconds, kind, typeId, result.PartId, item, result.Reason));
+            }
             return result;
+        }
+
+        /// <summary>Mistakes in this run, in order. Recorded in every mode.</summary>
+        public MistakeLog Mistakes { get; } = new MistakeLog();
+
+        /// <summary>Successful installs in order (pre-installed slots are not listed).</summary>
+        public IReadOnlyList<InstallRecord> InstallRecords => _installRecords;
+
+        /// <summary>Installs that succeeded on the part's first attempt.</summary>
+        public int FirstTimeFitCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (var r in _installRecords) if (r.IsFirstTimeFit) n++;
+                return n;
+            }
         }
 
         /// <summary>
