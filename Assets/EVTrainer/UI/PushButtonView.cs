@@ -68,6 +68,7 @@ namespace EVTrainer.UI
             // Hidden mid-press (e.g. the panel closes on click): come back fresh next time.
             _shown = 0f;
             _remoteT = -1f;
+            _remotePeaked = false;
             _logic?.Reset();
             if (_cap != null) _cap.localPosition = _capRest;
             SetTint(false);
@@ -87,16 +88,27 @@ namespace EVTrainer.UI
             if (_tinted && _logic.IsArmed) SetTint(false);
         }
 
-        /// <summary>Ray click animation: push in over 60 ms, hold 50 ms, then let go (spring-back handles return).</summary>
+        /// <summary>
+        /// Ray click animation: push in over 60 ms, hold 50 ms, then let go (spring-back handles return).
+        /// The full-depth frame is guaranteed even if one long frame (a hitch) spans the whole animation,
+        /// so a ray click can never be skipped.
+        /// </summary>
         private float RemoteDepth()
         {
             if (_remoteT < 0f) return 0f;
             _remoteT += Time.deltaTime;
             if (_remoteT < 0.06f) return _remoteT / 0.06f;
-            if (_remoteT < 0.11f) return 1f;
+            if (_remoteT < 0.11f || !_remotePeaked)
+            {
+                _remotePeaked = true;
+                return 1f;
+            }
             _remoteT = -1f;
+            _remotePeaked = false;
             return 0f;
         }
+
+        private bool _remotePeaked;
 
         private void Fire()
         {
