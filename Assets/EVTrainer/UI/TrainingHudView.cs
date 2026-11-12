@@ -71,9 +71,9 @@ namespace EVTrainer.UI
             else
             {
                 var current = progress.CurrentPart;
-                status = current != null
-                    ? (learn ? $"Next: {current.Instruction}. Match the glowing outline." : $"Next: {current.Instruction}.")
-                    : "";
+                if (current == null) status = "";
+                else if (learn) status = $"Next: {current.Instruction}. Match the glowing outline.";
+                else status = $"{StepCounter(progress)}. Work from memory: no hints in Test mode."; // never names the next step
                 statusColor = _neutralStatus;
             }
 
@@ -95,12 +95,34 @@ namespace EVTrainer.UI
             if (_statusBackground != null) _statusBackground.color = warning ? _warningStatus : _neutralStatus;
         }
 
+        /// <summary>"Step N of M": N is the first unfinished step (M when complete).</summary>
+        private static string StepCounter(AssemblyProgress progress)
+        {
+            var steps = progress.Definition.Steps;
+            var current = progress.CurrentStep;
+            int n = current != null ? current.Index + 1 : steps.Count;
+            return $"Step {n} of {steps.Count}";
+        }
+
         private string BuildStepList(AssemblyProgress progress)
         {
             // One line per step; steps with several identical parts show a count, e.g. "Install battery modules (2/4)".
+            // Test mode lists only completed steps plus the step counter: upcoming steps are not revealed.
             _sb.Clear();
             var steps = progress.Definition.Steps;
             var current = progress.CurrentStep;
+            if (progress.Mode == TrainingMode.Test)
+            {
+                foreach (var step in steps)
+                {
+                    if (progress.InstalledCount(step) < step.Slots.Count) continue;
+                    string done = step.Slots.Count > 1 ? $"{step.Instruction} ({step.Slots.Count}/{step.Slots.Count})" : step.Instruction;
+                    _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(done).Append("</color>\n");
+                }
+                _sb.Append("<color=").Append(CurrentColor).Append("><b>").Append(StepCounter(progress)).Append("</b></color>");
+                return _sb.ToString();
+            }
+
             for (int i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
