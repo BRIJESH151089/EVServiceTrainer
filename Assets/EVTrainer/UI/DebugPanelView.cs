@@ -68,10 +68,18 @@ namespace EVTrainer.UI
 
         private static void AppendFrame(StringBuilder sb, string name, InputFrame f, CultureInfo c)
         {
-            sb.Append(name).Append("  src=").Append(f.Source)
-              .Append("  grip=").Append(f.Grip.ToString("0.00", c))
-              .Append("  trigger=").Append(f.Trigger.ToString("0.00", c))
-              .AppendLine();
+            sb.Append(name).Append("  src=").Append(f.Source);
+            if (!f.IsTracked)
+            {
+                sb.AppendLine("  (not tracked)");
+                return;
+            }
+            sb.Append("  grip=").Append(f.Grip.ToString("0.00", c));
+            if (f.Source == InputSource.Hand)
+                sb.Append("  pinch=").Append(f.Pinch.ToString("0.00", c));
+            else
+                sb.Append("  trigger=").Append(f.Trigger.ToString("0.00", c));
+            sb.AppendLine();
         }
     }
 }
