@@ -62,6 +62,9 @@ namespace EVTrainer.XR
 
         public bool IsHeld { get; private set; }
 
+        /// <summary>True while a hand or controller is close enough to grab the part (XRI hover).</summary>
+        public bool IsHovered => _grab != null && _grab.enabled && _grab.isHovered;
+
         /// <summary>"Left", "Right" or "" when not held.</summary>
         public string HeldBy { get; private set; } = "";
 

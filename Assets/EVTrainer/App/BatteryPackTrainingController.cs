@@ -45,6 +45,9 @@ namespace EVTrainer.App
         [SerializeField] private TrainingHudView _hud;
         [Tooltip("Learn / Test choice shown before each run. Without it the run starts in Learn mode.")]
         [SerializeField] private StartPanelView _startPanel;
+        [Tooltip("Learn mode: name + hint label above the hovered or held part.")]
+        [SerializeField] private PartLabelView _partLabel;
+        [SerializeField, Min(0f)] private float _labelGapMetres = 0.06f;
 
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
@@ -258,6 +261,7 @@ namespace EVTrainer.App
             RenderHand(_leftHand, _leftHandVisual);
             RenderHand(_rightHand, _rightHandVisual);
             UpdateHeldPreview();
+            UpdatePartLabel();
 
             if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
             {
@@ -283,6 +287,43 @@ namespace EVTrainer.App
                 if (e.IsInstalled) ready = e.PartId;
             }
             if (_ghosts != null) _ghosts.SetReady(Progress.Mode == TrainingMode.Learn ? ready : null);
+        }
+
+        /// <summary>Learn mode: label the held part (else the hovered one) with its name and hint from the module data.</summary>
+        private void UpdatePartLabel()
+        {
+            if (_partLabel == null) return;
+            GrabbablePartAdapter focus = null;
+            if (IsRunning && Progress.Mode == TrainingMode.Learn)
+            {
+                foreach (var part in _parts)
+                    if (part.IsHeld && !part.IsLocked) { focus = part; break; }
+                if (focus == null)
+                    foreach (var part in _parts)
+                        if (part.IsHovered && !part.IsLocked) { focus = part; break; }
+            }
+
+            var slots = focus != null ? _definition.SlotsOfType(focus.PartTypeId) : null;
+            if (slots == null || slots.Count == 0)
+            {
+                _partLabel.Hide();
+                return;
+            }
+
+            var bounds = RendererBounds(focus);
+            var anchor = new Vector3(bounds.center.x, bounds.max.y + _labelGapMetres, bounds.center.z);
+            _partLabel.Show(slots[0].PartName, slots[0].Hint, anchor);
+        }
+
+        private readonly Dictionary<GrabbablePartAdapter, Renderer[]> _renderers = new Dictionary<GrabbablePartAdapter, Renderer[]>();
+
+        private Bounds RendererBounds(GrabbablePartAdapter part)
+        {
+            if (!_renderers.TryGetValue(part, out var rs)) _renderers[part] = rs = part.GetComponentsInChildren<Renderer>();
+            if (rs.Length == 0) return new Bounds(part.transform.position, Vector3.zero);
+            var b = rs[0].bounds;
+            for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
+            return b;
         }
 
         private void UpdateDebugPanel()
