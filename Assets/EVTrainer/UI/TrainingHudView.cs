@@ -47,11 +47,9 @@ namespace EVTrainer.UI
 
             string status;
             Color statusColor;
-            if (progress.IsComplete && (lastResult == null || lastResult.Value.IsInstalled))
+            if (progress.IsComplete)
             {
-                status = lastResult.HasValue
-                    ? InstallResultText.Describe(lastResult.Value, definition, progress.Mode) + " Module complete."
-                    : "Module complete.";
+                status = "Module complete.";
                 statusColor = _goodStatus;
             }
             else if (lastResult.HasValue)
@@ -61,10 +59,11 @@ namespace EVTrainer.UI
             }
             else
             {
-                var current = progress.CurrentPart;
-                if (current == null) status = "";
-                else if (learn) status = $"Next: {current.Instruction}. Match the glowing outline.";
-                else status = $"{StepCounter(progress)}. Work from memory: no hints in Test mode."; // never names the next step
+                var step = progress.CurrentStep;
+                if (step == null) status = "";
+                else if (!learn) status = $"{StepCounter(progress)}. Work from memory: no hints in Test mode."; // never names the next step
+                else if (step.Kind == StepKind.Parts) status = $"Next: {step.Instruction}. Match the glowing outline.";
+                else status = $"Next: {step.Instruction}.";
                 statusColor = _neutralStatus;
             }
 
@@ -86,13 +85,27 @@ namespace EVTrainer.UI
             if (_statusBackground != null) _statusBackground.color = warning ? _warningStatus : _neutralStatus;
         }
 
-        /// <summary>"Step N of M": N is the first unfinished step (M when complete).</summary>
+        /// <summary>Status line set by the caller (e.g. a bolt event): green when good, red when not.</summary>
+        public void ShowResult(string text, bool good)
+        {
+            if (_status != null) _status.text = text;
+            if (_statusBackground != null) _statusBackground.color = good ? _goodStatus : _badStatus;
+        }
+
+        /// <summary>"Step N of M" over the steps the trainee does (pre-installed ones are not counted);
+        /// N is the first unfinished one (M when complete).</summary>
         private static string StepCounter(AssemblyProgress progress)
         {
-            var steps = progress.Definition.Steps;
+            int total = 0, n = 0;
             var current = progress.CurrentStep;
-            int n = current != null ? current.Index + 1 : steps.Count;
-            return $"Step {n} of {steps.Count}";
+            foreach (var step in progress.Definition.Steps)
+            {
+                if (step.IsPreInstalled) continue;
+                total++;
+                if (step == current) n = total;
+            }
+            if (current == null) n = total;
+            return $"Step {n} of {total}";
         }
 
         private string BuildStepList(AssemblyProgress progress)
@@ -106,8 +119,8 @@ namespace EVTrainer.UI
             {
                 foreach (var step in steps)
                 {
-                    if (progress.InstalledCount(step) < step.Slots.Count) continue;
-                    string done = step.Slots.Count > 1 ? $"{step.Instruction} ({step.Slots.Count}/{step.Slots.Count})" : step.Instruction;
+                    if (!progress.IsStepComplete(step)) continue;
+                    string done = step.Size > 1 ? $"{step.Instruction} ({step.Size}/{step.Size})" : step.Instruction;
                     _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(done).Append("</color>\n");
                 }
                 _sb.Append("<color=").Append(CurrentColor).Append("><b>").Append(StepCounter(progress)).Append("</b></color>");
@@ -117,9 +130,9 @@ namespace EVTrainer.UI
             for (int i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                int done = progress.InstalledCount(step);
-                bool complete = done == step.Slots.Count;
-                string text = step.Slots.Count > 1 ? $"{step.Instruction} ({done}/{step.Slots.Count})" : step.Instruction;
+                int done = progress.CompletedCount(step);
+                bool complete = done >= step.Size;
+                string text = step.Size > 1 ? $"{step.Instruction} ({done}/{step.Size})" : step.Instruction;
 
                 if (complete)
                     _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(text).Append("</color>");

@@ -45,13 +45,52 @@ namespace EVTrainer.App
             public string[] prerequisites = Array.Empty<string>();
         }
 
+        /// <summary>One threaded hole, relative to the part the bolt set fastens (its installed target pose).</summary>
+        [Serializable]
+        public sealed class HoleEntry
+        {
+            public string id;
+            [Tooltip("Hole centre on the part's surface, relative to the part's target pose (metres).")]
+            public Vector3 localPosition;
+            [Tooltip("Hole orientation relative to the part; the bolt axis is local +Y (out of the hole).")]
+            public Vector3 localEulerAngles;
+        }
+
+        /// <summary>Bolts that fasten one part (e.g. the 8 cover bolts), the tightening pattern and the spec.</summary>
+        [Serializable]
+        public sealed class BoltSetEntry
+        {
+            public string id;
+            [Tooltip("Part id the bolts fasten; bolts become available once it is installed. Hole positions are relative to it.")]
+            public string prerequisitePartId;
+            [Tooltip("Name in sentences, e.g. \"cover bolts\".")]
+            public string groupName;
+            public string handStartInstruction = "Hand-start bolts";
+            public string torqueInstruction = "Torque bolts in pattern";
+            public HoleEntry[] holes = Array.Empty<HoleEntry>();
+            [Tooltip("Hole ids in the required tightening order (e.g. a cross pattern).")]
+            public string[] patternOrder = Array.Empty<string>();
+            [Min(0.1f)] public float threadTurnsToSeat = 3f;
+            [Min(0.1f)] public float torqueSpecNm = 8f;
+            [Min(0f)] public float torqueToleranceNm = 0.4f;
+            [Min(0.001f)] public float stiffnessNmPerDegree = 0.1f;
+            [Range(0f, 45f)] public float maxStartTiltDegrees = 10f;
+            [Header("Learn-mode labels")]
+            public string boltName = "Bolt";
+            public string boltHint;
+            public string wrenchName = "Torque wrench";
+            public string wrenchHint;
+        }
+
         [SerializeField] private string _id = "module";
         [SerializeField] private string _title = "Module";
         [SerializeField] private List<PartEntry> _parts = new List<PartEntry>();
+        [SerializeField] private List<BoltSetEntry> _boltSets = new List<BoltSetEntry>();
 
         public string Id => _id;
         public string Title => _title;
         public IReadOnlyList<PartEntry> Parts => _parts;
+        public IReadOnlyList<BoltSetEntry> BoltSets => _boltSets;
 
         /// <summary>Builds the Core definition with target poses in world space, placed by <paramref name="origin"/>.</summary>
         public AssemblyDefinition ToCore(Transform origin)
@@ -59,10 +98,12 @@ namespace EVTrainer.App
             if (origin == null) throw new ArgumentNullException(nameof(origin));
 
             var specs = new List<PartSpec>(_parts.Count);
+            var targets = new Dictionary<string, (Vector3 position, Quaternion rotation)>();
             foreach (var p in _parts)
             {
                 var worldPosition = origin.TransformPoint(p.localPosition);
                 var worldRotation = origin.rotation * Quaternion.Euler(p.localEulerAngles);
+                targets[p.id] = (worldPosition, worldRotation);
                 specs.Add(new PartSpec(
                     p.id, p.displayName,
                     new PartPose(worldPosition.ToNumerics(), worldRotation.ToNumerics()),
@@ -70,7 +111,30 @@ namespace EVTrainer.App
                     p.requiresTwoHands, p.prerequisites, p.preInstalled, p.instruction,
                     p.typeId, p.groupName, p.symmetry, p.partName, p.hint));
             }
-            return new AssemblyDefinition(_id, _title, specs);
+
+            var sets = new List<BoltSetSpec>(_boltSets.Count);
+            foreach (var s in _boltSets)
+            {
+                // Holes ride on the fastened part's target pose (falls back to the assembly origin).
+                var basePosition = origin.position;
+                var baseRotation = origin.rotation;
+                if (!string.IsNullOrEmpty(s.prerequisitePartId) && targets.TryGetValue(s.prerequisitePartId, out var t))
+                {
+                    basePosition = t.position;
+                    baseRotation = t.rotation;
+                }
+                var bolts = new List<BoltSpec>(s.holes.Length);
+                foreach (var h in s.holes)
+                {
+                    var position = basePosition + baseRotation * h.localPosition;
+                    var rotation = baseRotation * Quaternion.Euler(h.localEulerAngles);
+                    bolts.Add(new BoltSpec(h.id, new PartPose(position.ToNumerics(), rotation.ToNumerics()),
+                        s.threadTurnsToSeat, s.torqueSpecNm, s.torqueToleranceNm, s.stiffnessNmPerDegree, s.maxStartTiltDegrees));
+                }
+                sets.Add(new BoltSetSpec(s.id, string.IsNullOrEmpty(s.prerequisitePartId) ? null : s.prerequisitePartId,
+                    bolts, s.patternOrder, s.handStartInstruction, s.torqueInstruction, s.groupName));
+            }
+            return new AssemblyDefinition(_id, _title, specs, sets);
         }
     }
 }
