@@ -23,6 +23,8 @@ namespace EVTrainer.XR
         [SerializeField] private Transform _head;
         [Tooltip("UI-only ray interactor on this GameObject; its UI press is set to this reader at start.")]
         [SerializeField] private XRRayInteractor _ray;
+        [Tooltip("The Meta aim pose is only trusted if it starts within this distance of the tracked palm.")]
+        [SerializeField, Min(0.05f)] private float _maxAimOffsetFromHand = 0.25f;
         [Header("Fallback aim (no Meta aim pose)")]
         [SerializeField] private float _shoulderDrop = 0.15f;
         [SerializeField] private float _shoulderWidth = 0.18f;
@@ -36,6 +38,7 @@ namespace EVTrainer.XR
         private int _releasedFrame = -1;
         private float _value;
         private bool _tracked;
+        private bool _warnedFarAim;
 
         /// <summary>True while the ray is driven by the Meta aim pose (false = fallback estimate or untracked).</summary>
         public bool UsingMetaAim { get; private set; }
@@ -104,6 +107,23 @@ namespace EVTrainer.XR
                 rotation = _trackingSpace.rotation * rotation;
             }
             worldPose = new Pose(position, rotation);
+
+            // Sanity check: the aim ray must start at the hand. If the pose is far from the tracked hand
+            // (e.g. a space mismatch), ignore it and use the fallback rather than draw a ray from nowhere.
+            if (_hand.Current.IsTracked)
+            {
+                var palm = _hand.JointPositions[(int)HandJoint.Palm].ToUnity();
+                if ((position - palm).sqrMagnitude > _maxAimOffsetFromHand * _maxAimOffsetFromHand)
+                {
+                    if (!_warnedFarAim)
+                    {
+                        Debug.LogWarning($"[EVTrainer] {_hand.Handedness} Meta aim pose is {(position - palm).magnitude:0.00} m from the hand; using fallback aim.");
+                        _warnedFarAim = true;
+                    }
+                    return false;
+                }
+            }
+
             // While the system gesture (palm-up menu) is active the pinch belongs to the OS, not our UI.
             pinching = (flags & MetaAimFlags.IndexPinching) != 0 && (flags & MetaAimFlags.SystemGesture) == 0;
             strength = device.pinchStrengthIndex.ReadValue();

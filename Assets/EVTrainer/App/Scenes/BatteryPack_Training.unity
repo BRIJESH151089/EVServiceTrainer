@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 86877136}
   - component: {fileID: 86877135}
   - component: {fileID: 86877134}
+  - component: {fileID: 86877137}
   m_Layer: 0
   m_Name: UI Ray
   m_TagString: Untagged
@@ -754,6 +755,59 @@ MonoBehaviour:
     m_InputActionReference: {fileID: 0}
     m_ObjectReferenceObject: {fileID: 0}
     m_ManualValue: 0
+--- !u!114 &86877137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86877132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63b48552fa4b8314caf40774069b8cc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.ControllerAimPose
+  _position:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Aim Position
+      m_Type: 0
+      m_ExpectedControlType: Vector3
+      m_Id: 728328eb-ce92-4af5-a20a-3a7913f5d509
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: 94e227a3-229d-480a-b2a5-ed6777f95ba9
+        m_Path: <XRController>{RightHand}/pointerPosition
+        m_Interactions: 
+        m_Processors: 
+        m_Groups: 
+        m_Action: Aim Position
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  _rotation:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Aim Rotation
+      m_Type: 0
+      m_ExpectedControlType: Quaternion
+      m_Id: 5ccd93ed-6b98-44bc-9793-2da847585102
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: 11bd0c3f-c072-4f8e-818c-49082b887ba0
+        m_Path: <XRController>{RightHand}/pointerRotation
+        m_Interactions: 
+        m_Processors: 
+        m_Groups: 
+        m_Action: Aim Rotation
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  _trackingSpace: {fileID: 255909719}
 --- !u!1001 &91294170
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2578,6 +2632,7 @@ MonoBehaviour:
   _trackingSpace: {fileID: 255909719}
   _head: {fileID: 708385748}
   _ray: {fileID: 1015643279}
+  _maxAimOffsetFromHand: 0.25
   _shoulderDrop: 0.15
   _shoulderWidth: 0.18
   _press: 0.8
@@ -5270,6 +5325,7 @@ GameObject:
   - component: {fileID: 1952235890}
   - component: {fileID: 1952235889}
   - component: {fileID: 1952235888}
+  - component: {fileID: 1952235891}
   m_Layer: 0
   m_Name: UI Ray
   m_TagString: Untagged
@@ -5893,6 +5949,59 @@ MonoBehaviour:
     m_InputActionReference: {fileID: 0}
     m_ObjectReferenceObject: {fileID: 0}
     m_ManualValue: 0
+--- !u!114 &1952235891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1952235886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63b48552fa4b8314caf40774069b8cc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.ControllerAimPose
+  _position:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Aim Position
+      m_Type: 0
+      m_ExpectedControlType: Vector3
+      m_Id: 393d00c1-bc66-4518-9a9b-3b9fc12bf2aa
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: 915f43c0-0b31-47ef-b603-18081f00037d
+        m_Path: <XRController>{LeftHand}/pointerPosition
+        m_Interactions: 
+        m_Processors: 
+        m_Groups: 
+        m_Action: Aim Position
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  _rotation:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Aim Rotation
+      m_Type: 0
+      m_ExpectedControlType: Quaternion
+      m_Id: a690952e-c76c-481b-ad6c-57c5821c3b4f
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: 032b77dc-50a4-4d00-a378-6a9663b76ff6
+        m_Path: <XRController>{LeftHand}/pointerRotation
+        m_Interactions: 
+        m_Processors: 
+        m_Groups: 
+        m_Action: Aim Rotation
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  _trackingSpace: {fileID: 255909719}
 --- !u!1 &1991837939
 GameObject:
   m_ObjectHideFlags: 0
@@ -6913,6 +7022,7 @@ MonoBehaviour:
   _trackingSpace: {fileID: 255909719}
   _head: {fileID: 708385748}
   _ray: {fileID: 2060799994}
+  _maxAimOffsetFromHand: 0.25
   _shoulderDrop: 0.15
   _shoulderWidth: 0.18
   _press: 0.8

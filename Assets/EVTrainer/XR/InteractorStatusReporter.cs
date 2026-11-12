@@ -51,7 +51,12 @@ namespace EVTrainer.XR
                 if (i is XRRayInteractor ray)
                 {
                     _sb.Append("UI ").Append(ray.TryGetCurrentUIRaycastResult(out var hit) ? hit.gameObject.name : "-");
-                    _sb.Append(ray.uiPressInput.ReadIsPerformed() ? " (pressed)" : "").AppendLine();
+                    _sb.Append(ray.uiPressInput.ReadIsPerformed() ? " (pressed)" : "");
+                    var handAim = ray.GetComponent<HandRayPointer>();
+                    var ctrlAim = ray.GetComponent<ControllerAimPose>();
+                    if (handAim != null) _sb.Append(handAim.UsingMetaAim ? " [Meta aim]" : " [fallback aim]");
+                    else if (ctrlAim != null) _sb.Append(ctrlAim.HasPose ? " [aim pose]" : " [grip pose!]");
+                    _sb.AppendLine();
                     continue;
                 }
                 _sb.Append("hover ").Append(Names(i.interactablesHovered.Count, k => i.interactablesHovered[k]))
