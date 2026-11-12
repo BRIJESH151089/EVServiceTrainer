@@ -62,6 +62,9 @@ namespace EVTrainer.XR
 
         public bool IsHeld { get; private set; }
 
+        /// <summary>True when the XRI grab interactable is enabled (grabbing allowed).</summary>
+        public bool IsGrabbable => _grab != null && _grab.isActiveAndEnabled;
+
         /// <summary>True while a hand or controller is close enough to grab the part (XRI hover).</summary>
         public bool IsHovered => _grab != null && _grab.enabled && _grab.isHovered;
 

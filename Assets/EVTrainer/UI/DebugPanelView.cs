@@ -11,9 +11,10 @@ namespace EVTrainer.UI
     {
         public DebugPanelData(InputFrame left, InputFrame right, bool isHeld, string heldBy,
             SnapEvaluation snap, float positionToleranceMetres, float angleToleranceDegrees,
-            string lastInstall = null)
+            string lastInstall = null, string details = null)
         {
             LastInstall = lastInstall;
+            Details = details;
             Left = left;
             Right = right;
             IsHeld = isHeld;
@@ -33,6 +34,9 @@ namespace EVTrainer.UI
 
         /// <summary>Text of the last install attempt, or null if none yet.</summary>
         public string LastInstall { get; }
+
+        /// <summary>Extra diagnostic lines (mode, panel state, per-interactor hover/hold), or null.</summary>
+        public string Details { get; }
     }
 
     /// <summary>World-space debug panel: input values, grab state and live snap error.</summary>
@@ -51,6 +55,7 @@ namespace EVTrainer.UI
             _sb.Clear();
             _sb.AppendLine("EV Service Trainer - Debug");
             _sb.AppendLine();
+            if (!string.IsNullOrEmpty(data.Details)) _sb.AppendLine(data.Details);
             AppendFrame(_sb, "Left ", data.Left, c);
             AppendFrame(_sb, "Right", data.Right, c);
             _sb.AppendLine();

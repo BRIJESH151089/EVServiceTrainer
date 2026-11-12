@@ -53,6 +53,8 @@ namespace EVTrainer.App
         [SerializeField] private DebugPanelView _debugPanel;
         [Tooltip("Shows/hides the debug panel (left X button; F2 in the Editor).")]
         [SerializeField] private ButtonActionAdapter _debugToggle;
+        [Tooltip("Per-interactor hover/hold lines on the debug panel.")]
+        [SerializeField] private InteractorStatusReporter _interactorStatus;
         [SerializeField] private ControllerInputAdapter _leftInput;
         [SerializeField] private ControllerInputAdapter _rightInput;
         [SerializeField] private HandTrackingAdapter _leftHand;
@@ -109,6 +111,16 @@ namespace EVTrainer.App
             foreach (var part in _parts) part.SetGrabbable(true);
             RefreshGhosts();
             RefreshHud();
+            Debug.Log($"[EVTrainer] Run started: mode={mode}, start panel active={(_startPanel != null && _startPanel.gameObject.activeInHierarchy)}, " +
+                      $"grabbable parts={GrabbableCount()}/{_parts.Length}");
+            _nextPanelRefresh = 0f;
+        }
+
+        private int GrabbableCount()
+        {
+            int n = 0;
+            foreach (var part in _parts) if (part.IsGrabbable) n++;
+            return n;
         }
 
         private double RunTime => Time.time - _runStartTime;
@@ -131,6 +143,7 @@ namespace EVTrainer.App
                 _hud.ShowModeNotChosen();
                 _hud.ShowNotice("Choose Learn mode or Test mode on the panel to begin.", warning: false);
             }
+            Debug.Log($"[EVTrainer] Waiting for mode selection ({_definition.Title}); parts locked until then.");
         }
 
         private void OnModeChosen(TrainingMode mode) => BeginRun(mode);
@@ -348,7 +361,16 @@ namespace EVTrainer.App
                 ActiveFrame(_rightHand, _rightInput),
                 held != null, held != null ? $"{held.HeldBy}: {held.ItemId}" : "",
                 evaluation, posTol, angTol,
-                _lastInstallText));
+                _lastInstallText, DiagnosticsText()));
+        }
+
+        /// <summary>Mode, start-panel state, grabbable parts and what every interactor hovers/holds.</summary>
+        private string DiagnosticsText()
+        {
+            string mode = IsRunning ? Progress.Mode.ToString() : "not chosen";
+            bool panelActive = _startPanel != null && _startPanel.gameObject.activeInHierarchy;
+            string head = $"Mode: {mode} | start panel: {(panelActive ? "shown" : "hidden")} | grabbable parts: {GrabbableCount()}/{_parts.Length}";
+            return _interactorStatus != null ? head + "\n" + _interactorStatus.Describe() : head;
         }
 
         private static void RenderHand(HandTrackingAdapter hand, HandJointVisual visual)

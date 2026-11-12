@@ -72,7 +72,11 @@ namespace EVTrainer.XR
                 if (_tracked) AimFromShoulder();
             }
 
-            if (pressedNow && !_pressed) _pressedFrame = Time.frameCount;
+            if (pressedNow && !_pressed)
+            {
+                _pressedFrame = Time.frameCount;
+                Debug.Log($"[EVTrainer] {(_hand != null ? _hand.Handedness.ToString() : "?")} hand UI pinch ({(UsingMetaAim ? "Meta aim pose" : "fallback aim")}).");
+            }
             if (!pressedNow && _pressed) _releasedFrame = Time.frameCount;
             _pressed = pressedNow;
         }

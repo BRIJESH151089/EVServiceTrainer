@@ -31,7 +31,8 @@ namespace EVTrainer.UI
 
         private void Choose(TrainingMode mode)
         {
-            gameObject.SetActive(false);
+            Debug.Log($"[EVTrainer] Start panel: '{mode}' button clicked; hiding panel.");
+            gameObject.SetActive(false); // whole panel: canvas, raycaster and buttons
             ModeChosen?.Invoke(mode);
         }
     }
