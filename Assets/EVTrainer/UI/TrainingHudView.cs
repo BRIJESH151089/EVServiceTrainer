@@ -27,6 +27,15 @@ namespace EVTrainer.UI
         [SerializeField] private Color _badStatus = new Color(0.6f, 0.15f, 0.1f, 0.95f);
 
         [SerializeField] private Color _warningStatus = new Color(0.62f, 0.42f, 0.05f, 0.95f);
+        [SerializeField] private Button _restartButton;
+
+        /// <summary>Raised when the trainee presses Restart.</summary>
+        public event System.Action RestartRequested;
+
+        private void Awake()
+        {
+            if (_restartButton != null) _restartButton.onClick.AddListener(() => RestartRequested?.Invoke());
+        }
 
         private const string DoneColor = "#7FD88F";
         private const string CurrentColor = "#FFD34D";
@@ -70,6 +79,13 @@ namespace EVTrainer.UI
 
             if (_status != null) _status.text = status;
             if (_statusBackground != null) _statusBackground.color = statusColor;
+        }
+
+        /// <summary>Badge before a mode is chosen: neutral "MODE?".</summary>
+        public void ShowModeNotChosen()
+        {
+            if (_modeBadge != null) _modeBadge.text = "MODE?";
+            if (_modeBadgeBackground != null) _modeBadgeBackground.color = new Color(0.35f, 0.37f, 0.4f, 1f);
         }
 
         /// <summary>Temporary status line (e.g. "Heavy part: use both hands"); the next Render replaces it.</summary>

@@ -41,8 +41,10 @@ namespace EVTrainer.App
         [SerializeField, Min(0f)] private float _settleLinearSpeed = 0.02f;
         [SerializeField, Min(0f)] private float _settleAngularSpeed = 0.3f;
 
-        [Header("HUD")]
+        [Header("HUD and mode selection")]
         [SerializeField] private TrainingHudView _hud;
+        [Tooltip("Learn / Test choice shown before each run. Without it the run starts in Learn mode.")]
+        [SerializeField] private StartPanelView _startPanel;
 
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
@@ -87,8 +89,12 @@ namespace EVTrainer.App
                     _ghosts.Place(spec.Id, spec.TargetPose.Position.ToUnity(), spec.TargetPose.Rotation.ToUnity());
             }
 
-            BeginRun(TrainingMode.Learn);
+            // Placeholder progress so the HUD can list the steps while the trainee picks a mode.
+            Progress = new AssemblyProgress(_definition, TrainingMode.Learn);
         }
+
+        /// <summary>True once a mode has been chosen and the run has started.</summary>
+        public bool IsRunning { get; private set; }
 
         private void BeginRun(TrainingMode mode)
         {
@@ -96,15 +102,39 @@ namespace EVTrainer.App
             LastResult = null;
             _lastInstallText = null;
             _runStartTime = Time.time;
+            IsRunning = true;
+            foreach (var part in _parts) part.SetGrabbable(true);
+            RefreshGhosts();
+            RefreshHud();
         }
 
         private double RunTime => Time.time - _runStartTime;
 
         private void Start()
         {
+            if (_startPanel == null)
+            {
+                BeginRun(TrainingMode.Learn);
+                return;
+            }
+
+            // Nothing can be picked up until a mode is chosen.
+            foreach (var part in _parts) part.SetGrabbable(false);
+            _startPanel.Show();
             RefreshGhosts();
             RefreshHud();
+            if (_hud != null)
+            {
+                _hud.ShowModeNotChosen();
+                _hud.ShowNotice("Choose Learn mode or Test mode on the panel to begin.", warning: false);
+            }
         }
+
+        private void OnModeChosen(TrainingMode mode) => BeginRun(mode);
+
+        /// <summary>Restart: reload the scene, which brings back the mode selection with every part on its rack.</summary>
+        private void OnRestartRequested() =>
+            UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.name);
 
         private void RefreshHud()
         {
@@ -117,7 +147,7 @@ namespace EVTrainer.App
             if (_ghosts == null) return;
             _ghostSlots.Clear();
             var step = Progress.CurrentStep;
-            if (Progress.Mode == TrainingMode.Learn && step != null)
+            if (IsRunning && Progress.Mode == TrainingMode.Learn && step != null)
             {
                 foreach (var slot in step.Slots)
                 {
@@ -134,6 +164,8 @@ namespace EVTrainer.App
                 part.Released += OnPartReleased;
                 part.SecondHandNeeded += OnSecondHandNeeded;
             }
+            if (_startPanel != null) _startPanel.ModeChosen += OnModeChosen;
+            if (_hud != null) _hud.RestartRequested += OnRestartRequested;
         }
 
         private void OnDisable()
@@ -143,6 +175,8 @@ namespace EVTrainer.App
                 part.Released -= OnPartReleased;
                 part.SecondHandNeeded -= OnSecondHandNeeded;
             }
+            if (_startPanel != null) _startPanel.ModeChosen -= OnModeChosen;
+            if (_hud != null) _hud.RestartRequested -= OnRestartRequested;
         }
 
         private void OnSecondHandNeeded(GrabbablePartAdapter part)
