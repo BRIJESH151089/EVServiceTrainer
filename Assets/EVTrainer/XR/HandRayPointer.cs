@@ -50,6 +50,9 @@ namespace EVTrainer.XR
             {
                 _ray.uiPressInput.inputSourceMode = XRInputButtonReader.InputSourceMode.ObjectReference;
                 _ray.uiPressInput.SetObjectReference(this);
+                // Same pinch selects 3D push buttons at a distance (the ray only sees the UI button layer).
+                _ray.selectInput.inputSourceMode = XRInputButtonReader.InputSourceMode.ObjectReference;
+                _ray.selectInput.SetObjectReference(this);
             }
         }
 

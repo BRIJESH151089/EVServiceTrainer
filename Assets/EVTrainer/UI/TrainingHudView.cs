@@ -27,15 +27,6 @@ namespace EVTrainer.UI
         [SerializeField] private Color _badStatus = new Color(0.6f, 0.15f, 0.1f, 0.95f);
 
         [SerializeField] private Color _warningStatus = new Color(0.62f, 0.42f, 0.05f, 0.95f);
-        [SerializeField] private Button _restartButton;
-
-        /// <summary>Raised when the trainee presses Restart.</summary>
-        public event System.Action RestartRequested;
-
-        private void Awake()
-        {
-            if (_restartButton != null) _restartButton.onClick.AddListener(() => RestartRequested?.Invoke());
-        }
 
         private const string DoneColor = "#7FD88F";
         private const string CurrentColor = "#FFD34D";

@@ -66,8 +66,12 @@ namespace EVTrainer.XR
             return _sb.ToString();
         }
 
-        private static string Label(XRBaseInteractor i) =>
-            i is XRRayInteractor ? $"{(i.transform.parent != null ? i.transform.parent.name : i.name)} ray" : $"{i.name} grab";
+        private static string Label(XRBaseInteractor i)
+        {
+            if (i is XRPokeInteractor) return i.name; // e.g. "Left Hand Poke"
+            if (i is XRRayInteractor) return $"{(i.transform.parent != null ? i.transform.parent.name : i.name)} ray";
+            return $"{i.name} grab";
+        }
 
         private static string Names(int count, System.Func<int, IXRInteractable> get)
         {

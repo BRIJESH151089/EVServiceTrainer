@@ -48,6 +48,8 @@ namespace EVTrainer.App
         [Tooltip("Learn mode: name + hint label above the hovered or held part.")]
         [SerializeField] private PartLabelView _partLabel;
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.06f;
+        [Tooltip("Physical Restart push button (within reach). Back to mode selection with all parts staged.")]
+        [SerializeField] private PushButtonView _restartButton;
 
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
@@ -109,6 +111,8 @@ namespace EVTrainer.App
             _runStartTime = Time.time;
             IsRunning = true;
             foreach (var part in _parts) part.SetGrabbable(true);
+            // The HUD and Restart only appear once the start panel has gone, so the two never overlap.
+            SetRunUiVisible(true);
             RefreshGhosts();
             RefreshHud();
             Debug.Log($"[EVTrainer] Run started: mode={mode}, start panel active={(_startPanel != null && _startPanel.gameObject.activeInHierarchy)}, " +
@@ -135,22 +139,26 @@ namespace EVTrainer.App
 
             // Nothing can be picked up until a mode is chosen.
             foreach (var part in _parts) part.SetGrabbable(false);
+            SetRunUiVisible(false);
             _startPanel.Show(_definition.Title);
             RefreshGhosts();
-            RefreshHud();
-            if (_hud != null)
-            {
-                _hud.ShowModeNotChosen();
-                _hud.ShowNotice("Choose Learn mode or Test mode on the panel to begin.", warning: false);
-            }
             Debug.Log($"[EVTrainer] Waiting for mode selection ({_definition.Title}); parts locked until then.");
+        }
+
+        private void SetRunUiVisible(bool visible)
+        {
+            if (_hud != null) _hud.gameObject.SetActive(visible);
+            if (_restartButton != null) _restartButton.gameObject.SetActive(visible);
         }
 
         private void OnModeChosen(TrainingMode mode) => BeginRun(mode);
 
         /// <summary>Restart: reload the scene, which brings back the mode selection with every part on its rack.</summary>
-        private void OnRestartRequested() =>
+        private void OnRestartRequested()
+        {
+            Debug.Log("[EVTrainer] Restart pressed: reloading the scene.");
             UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.name);
+        }
 
         private void RefreshHud()
         {
@@ -181,7 +189,7 @@ namespace EVTrainer.App
                 part.SecondHandNeeded += OnSecondHandNeeded;
             }
             if (_startPanel != null) _startPanel.ModeChosen += OnModeChosen;
-            if (_hud != null) _hud.RestartRequested += OnRestartRequested;
+            if (_restartButton != null) _restartButton.Clicked += OnRestartRequested;
         }
 
         private void OnDisable()
@@ -192,7 +200,7 @@ namespace EVTrainer.App
                 part.SecondHandNeeded -= OnSecondHandNeeded;
             }
             if (_startPanel != null) _startPanel.ModeChosen -= OnModeChosen;
-            if (_hud != null) _hud.RestartRequested -= OnRestartRequested;
+            if (_restartButton != null) _restartButton.Clicked -= OnRestartRequested;
         }
 
         private void OnSecondHandNeeded(GrabbablePartAdapter part)
