@@ -19,6 +19,7 @@ namespace EVTrainer.App
         [Tooltip("Assembly origin: target poses in the module are relative to this (fixture top centre).")]
         [SerializeField] private Transform _assemblyOrigin;
         [SerializeField] private GrabbablePartAdapter[] _parts;
+        [SerializeField] private GhostPresenter _ghosts;
 
         [Header("Snap")]
         [SerializeField, Min(0f)] private float _snapSeconds = 0.15f;
@@ -56,6 +57,23 @@ namespace EVTrainer.App
                 }
                 _partsById[part.PartId] = part;
             }
+
+            if (_ghosts != null)
+            {
+                foreach (var spec in definition.Parts)
+                    _ghosts.Place(spec.Id, spec.TargetPose.Position.ToUnity(), spec.TargetPose.Rotation.ToUnity());
+            }
+        }
+
+        private void Start() => RefreshGhost();
+
+        /// <summary>Learn mode: outline only the current part, and only while it can be fitted.</summary>
+        private void RefreshGhost()
+        {
+            if (_ghosts == null) return;
+            var current = Progress.CurrentPart;
+            bool show = Progress.Mode == TrainingMode.Learn && current != null && Progress.IsAvailable(current.Id);
+            _ghosts.Show(show ? current.Id : null);
         }
 
         private void OnEnable()
@@ -83,6 +101,7 @@ namespace EVTrainer.App
                 part.PulseReleasingController(_hapticAmplitude, _hapticSeconds);
                 var feedback = part.GetComponent<SnapFeedback>();
                 if (feedback != null) feedback.PlayInstalled();
+                RefreshGhost();
             }
 
             _nextPanelRefresh = 0f; // show the result immediately
