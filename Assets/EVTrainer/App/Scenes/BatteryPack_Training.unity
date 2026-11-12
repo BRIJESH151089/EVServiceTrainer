@@ -1808,7 +1808,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69ba27a9c9881284ca361fbeee0aa23d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.HandJointVisual
-  _sphereMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  _sphereMesh: {fileID: 4300000, guid: da3f1f88a9426e24d8c5f81bdfa8e127, type: 2}
   _material: {fileID: 2100000, guid: 65a8c1961721c1e489056ef097d2ca28, type: 2}
   _jointDiameter: 0.012
   _lineWidth: 0.004
@@ -3796,7 +3796,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69ba27a9c9881284ca361fbeee0aa23d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.HandJointVisual
-  _sphereMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  _sphereMesh: {fileID: 4300000, guid: da3f1f88a9426e24d8c5f81bdfa8e127, type: 2}
   _material: {fileID: 2100000, guid: 65a8c1961721c1e489056ef097d2ca28, type: 2}
   _jointDiameter: 0.012
   _lineWidth: 0.004
