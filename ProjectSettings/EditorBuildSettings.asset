@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/EVTrainer/App/Scenes/Phase1_Debug.unity
-    guid: 2be707c3252be2e449086b0d0c3cbb6c
+    path: Assets/EVTrainer/App/Scenes/BatteryPack_Training.unity
+    guid: 19e66281d8051244f93cbd5eb831c8a7
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: fc65505496ffef4408b75c6aadf98d94, type: 2}
