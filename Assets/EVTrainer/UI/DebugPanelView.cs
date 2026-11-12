@@ -10,8 +10,10 @@ namespace EVTrainer.UI
     public readonly struct DebugPanelData
     {
         public DebugPanelData(InputFrame left, InputFrame right, bool isHeld, string heldBy,
-            SnapEvaluation snap, float positionToleranceMetres, float angleToleranceDegrees)
+            SnapEvaluation snap, float positionToleranceMetres, float angleToleranceDegrees,
+            string lastInstall = null)
         {
+            LastInstall = lastInstall;
             Left = left;
             Right = right;
             IsHeld = isHeld;
@@ -28,6 +30,9 @@ namespace EVTrainer.UI
         public SnapEvaluation Snap { get; }
         public float PositionToleranceMetres { get; }
         public float AngleToleranceDegrees { get; }
+
+        /// <summary>Text of the last install attempt, or null if none yet.</summary>
+        public string LastInstall { get; }
     }
 
     /// <summary>World-space debug panel: input values, grab state and live snap error.</summary>
@@ -44,7 +49,7 @@ namespace EVTrainer.UI
         {
             var c = CultureInfo.InvariantCulture;
             _sb.Clear();
-            _sb.AppendLine("EV Service Trainer - Phase 1 Debug");
+            _sb.AppendLine("EV Service Trainer - Debug");
             _sb.AppendLine();
             AppendFrame(_sb, "Left ", data.Left, c);
             AppendFrame(_sb, "Right", data.Right, c);
@@ -61,6 +66,8 @@ namespace EVTrainer.UI
                .AppendLine(data.Snap.IsAngleWithinTolerance ? "OK" : "--");
             _sb.AppendLine();
             _sb.Append(data.Snap.IsWithinTolerance ? "WITHIN TOLERANCE" : "out of tolerance");
+            if (!string.IsNullOrEmpty(data.LastInstall))
+                _sb.AppendLine().AppendLine().Append("Last release: ").Append(data.LastInstall);
 
             if (_label != null) _label.text = _sb.ToString();
             if (_background != null) _background.color = data.Snap.IsWithinTolerance ? _withinToleranceColor : _outOfToleranceColor;
