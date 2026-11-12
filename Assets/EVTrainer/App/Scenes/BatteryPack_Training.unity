@@ -5703,7 +5703,7 @@ GameObject:
   - component: {fileID: 1991837941}
   - component: {fileID: 1991837940}
   m_Layer: 0
-  m_Name: Battery Pack Training
+  m_Name: Assembly Training
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

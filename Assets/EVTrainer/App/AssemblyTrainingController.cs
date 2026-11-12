@@ -9,11 +9,11 @@ using UnityEngine;
 namespace EVTrainer.App
 {
     /// <summary>
-    /// Composition root for the battery pack training scene. Builds the Core assembly from the
+    /// Composition root for a training scene. Loads ONE assembly module (data asset), builds the Core assembly from the
     /// module data, sends every part release to <see cref="AssemblyProgress.TryInstall"/> and drives
     /// the snap (lock, haptics, sound, highlight), ghosts and panels from the result.
     /// </summary>
-    public sealed class BatteryPackTrainingController : MonoBehaviour
+    public sealed class AssemblyTrainingController : MonoBehaviour
     {
         [Header("Content")]
         [SerializeField] private AssemblyModuleDefinition _module;
@@ -123,7 +123,7 @@ namespace EVTrainer.App
 
             // Nothing can be picked up until a mode is chosen.
             foreach (var part in _parts) part.SetGrabbable(false);
-            _startPanel.Show();
+            _startPanel.Show(_definition.Title);
             RefreshGhosts();
             RefreshHud();
             if (_hud != null)
