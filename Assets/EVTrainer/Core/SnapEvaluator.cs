@@ -3,23 +3,38 @@ using System.Numerics;
 
 namespace EVTrainer.Core
 {
-    /// <summary>Pose-vs-target distance and angle maths.</summary>
+    /// <summary>Pose-vs-target distance and angle maths, symmetry-aware.</summary>
     public static class SnapEvaluator
     {
         private const float RadToDeg = (float)(180.0 / Math.PI);
+        private static readonly Quaternion HalfTurnAboutUp = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)Math.PI);
 
         public static SnapEvaluation Evaluate(PartSpec spec, PartPose current)
         {
             if (spec == null) throw new ArgumentNullException(nameof(spec));
 
             float positionError = Vector3.Distance(current.Position, spec.TargetPose.Position);
-            float angleError = AngleBetweenDegrees(current.Rotation, spec.TargetPose.Rotation);
+            float angleError = AngleBetweenDegrees(current.Rotation, ClosestEquivalentRotation(spec, current.Rotation));
 
             return new SnapEvaluation(
                 positionError,
                 angleError,
                 positionError <= spec.PositionToleranceMetres,
                 angleError <= spec.AngleToleranceDegrees);
+        }
+
+        /// <summary>
+        /// The target rotation, or for a symmetric part whichever equivalent target rotation is closest to
+        /// <paramref name="current"/> (so a flipped busbar snaps without spinning round).
+        /// </summary>
+        public static Quaternion ClosestEquivalentRotation(PartSpec spec, Quaternion current)
+        {
+            if (spec == null) throw new ArgumentNullException(nameof(spec));
+            var target = spec.TargetPose.Rotation;
+            if (spec.Symmetry != PartSymmetry.HalfTurnAboutUp) return target;
+
+            var flipped = target * HalfTurnAboutUp; // 180° about the part's own up axis
+            return AngleBetweenDegrees(current, flipped) < AngleBetweenDegrees(current, target) ? flipped : target;
         }
 
         /// <summary>

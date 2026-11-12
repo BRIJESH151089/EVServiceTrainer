@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace EVTrainer.Core
 {
     /// <summary>
-    /// Run-time state of one assembly: which parts are installed and which step is current.
-    /// Parts marked <see cref="PartSpec.PreInstalled"/> start installed.
+    /// Run-time state of one assembly: which slots are installed and which step is current.
+    /// Slots marked <see cref="PartSpec.PreInstalled"/> start installed.
     /// </summary>
     public sealed class AssemblyProgress
     {
@@ -25,10 +26,10 @@ namespace EVTrainer.Core
         public AssemblyDefinition Definition { get; }
         public TrainingMode Mode { get; }
 
-        /// <summary>Installed part ids in the order they were installed (pre-installed parts first).</summary>
+        /// <summary>Installed slot ids in the order they were installed (pre-installed slots first).</summary>
         public IReadOnlyList<string> InstalledPartIds => _installOrder;
 
-        /// <summary>Index into <see cref="AssemblyDefinition.Parts"/> of the first part not yet installed;
+        /// <summary>Index into <see cref="AssemblyDefinition.Parts"/> of the first slot not yet installed;
         /// equals the part count when complete.</summary>
         public int CurrentStepIndex
         {
@@ -43,7 +44,7 @@ namespace EVTrainer.Core
             }
         }
 
-        /// <summary>The first part (in procedure order) not yet installed, or null when complete.</summary>
+        /// <summary>The first slot (in procedure order) not yet installed, or null when complete.</summary>
         public PartSpec CurrentPart
         {
             get
@@ -53,18 +54,43 @@ namespace EVTrainer.Core
             }
         }
 
+        /// <summary>The first procedure step with an uninstalled slot, or null when complete.</summary>
+        public AssemblyStep CurrentStep
+        {
+            get
+            {
+                foreach (var step in Definition.Steps)
+                {
+                    if (InstalledCount(step) < step.Slots.Count) return step;
+                }
+                return null;
+            }
+        }
+
         public bool IsComplete => _installed.Count == Definition.Parts.Count;
 
         public bool IsInstalled(string partId) => _installed.Contains(partId);
 
-        /// <summary>A part is available when it is not installed and all its prerequisites are.</summary>
+        /// <summary>Number of installed slots in <paramref name="step"/>.</summary>
+        public int InstalledCount(AssemblyStep step)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            int n = 0;
+            foreach (var slot in step.Slots)
+            {
+                if (_installed.Contains(slot.Id)) n++;
+            }
+            return n;
+        }
+
+        /// <summary>A slot is available when it is not installed and all its prerequisites are.</summary>
         public bool IsAvailable(string partId)
         {
             var part = GetPart(partId);
             return !_installed.Contains(part.Id) && MissingPrerequisites(part).Count == 0;
         }
 
-        /// <summary>All available parts, in procedure order.</summary>
+        /// <summary>All available slots, in procedure order.</summary>
         public IReadOnlyList<PartSpec> AvailableParts
         {
             get
@@ -79,33 +105,92 @@ namespace EVTrainer.Core
         }
 
         /// <summary>
-        /// Attempts to install a part released at <paramref name="pose"/>. Checks, in order:
-        /// already installed, prerequisites, position tolerance, angle tolerance.
+        /// Judges a part of <paramref name="typeId"/> released at <paramref name="pose"/> without changing anything.
+        /// The part is judged against the nearest free slot of its type (a slot within tolerance wins), then checks,
+        /// in order: prerequisites of that slot, position tolerance, angle tolerance (symmetry-aware).
         /// </summary>
-        public InstallResult TryInstall(string partId, PartPose pose)
+        public InstallResult Evaluate(string typeId, PartPose pose)
         {
-            var part = GetPart(partId);
+            var slots = Definition.SlotsOfType(typeId);
+            if (slots.Count == 0)
+                throw new ArgumentException($"Unknown part type '{typeId}' for assembly '{Definition.Id}'.", nameof(typeId));
 
-            if (_installed.Contains(part.Id))
-                return new InstallResult(InstallOutcome.AlreadyInstalled, part.Id, default);
+            var slot = PickSlot(slots, pose, out var evaluation);
+            if (slot == null)
+                return new InstallResult(InstallOutcome.AlreadyInstalled, slots[slots.Count - 1].Id, default, typeId: typeId);
 
-            var missing = MissingPrerequisites(part);
+            var missing = MissingPrerequisites(slot);
             if (missing.Count > 0)
-                return new InstallResult(InstallOutcome.WrongOrder, part.Id, default, missing);
+                return new InstallResult(InstallOutcome.WrongOrder, slot.Id, evaluation, missing, OrderReason(slot, missing), typeId: typeId);
 
-            var evaluation = SnapEvaluator.Evaluate(part, pose);
+            var snapPose = new PartPose(slot.TargetPose.Position, SnapEvaluator.ClosestEquivalentRotation(slot, pose.Rotation));
             if (!evaluation.IsPositionWithinTolerance)
-                return new InstallResult(InstallOutcome.OutOfTolerance, part.Id, evaluation);
+                return new InstallResult(InstallOutcome.OutOfTolerance, slot.Id, evaluation, snapPose: snapPose, typeId: typeId);
             if (!evaluation.IsAngleWithinTolerance)
-                return new InstallResult(InstallOutcome.WrongOrientation, part.Id, evaluation);
+                return new InstallResult(InstallOutcome.WrongOrientation, slot.Id, evaluation, snapPose: snapPose, typeId: typeId);
 
-            MarkInstalled(part.Id);
-            return new InstallResult(InstallOutcome.Installed, part.Id, evaluation);
+            return new InstallResult(InstallOutcome.Installed, slot.Id, evaluation, snapPose: snapPose, typeId: typeId);
+        }
+
+        /// <summary>
+        /// Attempts to install a part of <paramref name="typeId"/> released at <paramref name="pose"/>
+        /// (see <see cref="Evaluate"/>). On success the chosen slot becomes installed.
+        /// </summary>
+        public InstallResult TryInstall(string typeId, PartPose pose)
+        {
+            var result = Evaluate(typeId, pose);
+            if (result.IsInstalled) MarkInstalled(result.PartId);
+            return result;
+        }
+
+        /// <summary>
+        /// Nearest free slot to <paramref name="pose"/>. A slot the pose is fully within tolerance of wins over a
+        /// merely nearer one, so tightly packed slots never steal a correct fit. Null when every slot is installed.
+        /// </summary>
+        private PartSpec PickSlot(IReadOnlyList<PartSpec> slots, PartPose pose, out SnapEvaluation evaluation)
+        {
+            PartSpec best = null;
+            evaluation = default;
+            bool bestFits = false;
+            foreach (var slot in slots)
+            {
+                if (_installed.Contains(slot.Id)) continue;
+                var e = SnapEvaluator.Evaluate(slot, pose);
+                bool fits = e.IsWithinTolerance;
+                if (best == null || (fits && !bestFits) || (fits == bestFits && e.PositionErrorMetres < evaluation.PositionErrorMetres))
+                {
+                    best = slot;
+                    evaluation = e;
+                    bestFits = fits;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>"Cooling plate must be fitted before the battery modules."</summary>
+        private string OrderReason(PartSpec slot, List<string> missing)
+        {
+            var groups = new List<string>();
+            foreach (var id in missing)
+            {
+                Definition.TryGetPart(id, out var part);
+                if (!groups.Contains(part.GroupName)) groups.Add(part.GroupName);
+            }
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < groups.Count; i++)
+            {
+                if (i > 0) sb.Append(i == groups.Count - 1 ? " and " : ", ");
+                sb.Append(groups[i]);
+            }
+            if (sb.Length > 0) sb[0] = char.ToUpperInvariant(sb[0]);
+            sb.Append(" must be fitted before the ").Append(slot.GroupName).Append('.');
+            return sb.ToString();
         }
 
         private PartSpec GetPart(string partId)
         {
-            if (partId == null || !Definition.TryGetPart(partId, out var part))
+            if (!Definition.TryGetPart(partId, out var part))
                 throw new ArgumentException($"Unknown part id '{partId}' for assembly '{Definition.Id}'.", nameof(partId));
             return part;
         }
