@@ -312,6 +312,7 @@ GameObject:
   - component: {fileID: 6866384756387472214}
   - component: {fileID: 1924864748874644386}
   - component: {fileID: 6952190835499253937}
+  - component: {fileID: 6514416356924541510}
   m_Layer: 0
   m_Name: Gauge
   m_TagString: Untagged
@@ -482,6 +483,22 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 1924864748874644386}
   m_maskType: 0
+--- !u!114 &6514416356924541510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5401755026817730545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfae99e29f0c0054baf9a2ea91ba5f3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.UI::EVTrainer.UI.TorqueGaugeView
+  _text: {fileID: 6952190835499253937}
+  _normal: {r: 1, g: 1, b: 1, a: 1}
+  _inSpec: {r: 0.35, g: 1, b: 0.45, a: 1}
+  _over: {r: 1, g: 0.3, b: 0.25, a: 1}
 --- !u!1 &5423570967041543447
 GameObject:
   m_ObjectHideFlags: 0
@@ -561,6 +578,7 @@ GameObject:
   - component: {fileID: 7415293510274339851}
   - component: {fileID: 1708949029081138324}
   - component: {fileID: 5493787513659020834}
+  - component: {fileID: 4517272880652292265}
   m_Layer: 0
   m_Name: TorqueWrench
   m_TagString: Untagged
@@ -786,6 +804,18 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &4517272880652292265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7924771560108839334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 878d1f7c2482dbf459282c65d99735ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.WrenchAdapter
 --- !u!1 &9107729639891402885
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EVTrainer.Core;
 using EVTrainer.Rendering;
+using EVTrainer.UI;
 using EVTrainer.XR;
 using UnityEngine;
 
@@ -29,6 +30,25 @@ namespace EVTrainer.App
         [Tooltip("Pulling the hand this far from a jammed (or just inserted) bolt takes it out of the hole.")]
         [SerializeField, Min(0.01f)] private float _pullOutMetres = 0.07f;
 
+        [Header("Torque wrench")]
+        [SerializeField] private WrenchAdapter _wrench;
+        [SerializeField] private TorqueGaugeView _gauge;
+        [Tooltip("The wrench fits when its socket is this close to a bolt head...")]
+        [SerializeField, Min(0.001f)] private float _fitRadiusMetres = 0.025f;
+        [Tooltip("...and its axis is within this angle of the bolt axis.")]
+        [SerializeField, Range(0f, 90f)] private float _fitMaxAngleDegrees = 35f;
+        [Tooltip("Height of the bolt head above the surface (the socket sits on top of it).")]
+        [SerializeField, Min(0f)] private float _boltHeadHeightMetres = 0.007f;
+        [Tooltip("Pulling the hand this far off the swing plane, or this far from the bolt, takes the wrench off.")]
+        [SerializeField, Min(0.02f)] private float _detachOffPlaneMetres = 0.12f;
+        [SerializeField, Min(0.1f)] private float _detachRadiusMetres = 0.5f;
+        [Tooltip("A haptic tick every this many degrees of swing, stronger as torque rises toward spec.")]
+        [SerializeField, Min(0.5f)] private float _hapticStepDegrees = 4f;
+
+        [Header("Learn: pattern numbers")]
+        [SerializeField] private FloatingNumberView _numberPrefab;
+        [SerializeField, Min(0f)] private float _numberHeightMetres = 0.05f;
+
         [Header("Bolt colours")]
         [SerializeField] private Color _startedColor = new Color(0.95f, 0.8f, 0.15f);
         [SerializeField] private Color _torquedColor = new Color(0.25f, 0.85f, 0.35f);
@@ -45,8 +65,15 @@ namespace EVTrainer.App
 
         private readonly List<BoltRuntime> _runtimes = new List<BoltRuntime>();
         private readonly Dictionary<BoltAdapter, BoltRuntime> _byAdapter = new Dictionary<BoltAdapter, BoltRuntime>();
+        private readonly Dictionary<string, FloatingNumberView> _numbers = new Dictionary<string, FloatingNumberView>();
+        private readonly AxisRotationTracker _wrenchTracker = new AxisRotationTracker();
         private bool _grabbableApplied;
         private bool _grabbable;
+        private string _wrenchHole;        // bolt the wrench is fitted on
+        private string _refusedHole;       // last bolt the wrench was refused on (don't repeat the message while it stays there)
+        private float _hapticAccumulator;
+        private AudioSource _audio;
+        private AudioClip _click;
 
         private AssemblyProgress Progress => _training != null ? _training.Progress : null;
         private BoltSet Set => Progress != null && Progress.BoltSets.Count > 0 ? Progress.BoltSets[0] : null;
@@ -61,6 +88,14 @@ namespace EVTrainer.App
                 _runtimes.Add(rt);
                 _byAdapter[b] = rt;
             }
+
+            _audio = gameObject.AddComponent<AudioSource>();
+            _audio.playOnAwake = false;
+            _audio.spatialBlend = 1f;
+            const int rate = 44100;
+            var samples = ProceduralClick.CreateSamples(rate, 0.06f, 1800f, 120f);
+            _click = AudioClip.Create("TorqueClick", samples.Length, 1, rate, false);
+            _click.SetData(samples, 0);
         }
 
         private void OnEnable()
@@ -70,6 +105,7 @@ namespace EVTrainer.App
                 b.Grabbed += OnBoltGrabbed;
                 b.Released += OnBoltReleased;
             }
+            if (_wrench != null) _wrench.Released += OnWrenchReleased;
         }
 
         private void OnDisable()
@@ -79,6 +115,7 @@ namespace EVTrainer.App
                 b.Grabbed -= OnBoltGrabbed;
                 b.Released -= OnBoltReleased;
             }
+            if (_wrench != null) _wrench.Released -= OnWrenchReleased;
         }
 
         private void Update()
@@ -90,6 +127,7 @@ namespace EVTrainer.App
                 _grabbable = running;
                 _grabbableApplied = true;
                 foreach (var rt in _runtimes) rt.Adapter.SetGrabbable(running && !IsSeatedInHole(rt));
+                if (_wrench != null) _wrench.SetGrabbable(running);
             }
             if (!running || Set == null) return;
 
@@ -97,6 +135,197 @@ namespace EVTrainer.App
             {
                 if (rt.Adapter.IsHeld) UpdateHeldBolt(rt);
                 UpdateTint(rt);
+            }
+            UpdateWrench();
+            UpdateNumbers();
+        }
+
+        // ---------------- Torque wrench ----------------
+
+        private void UpdateWrench()
+        {
+            if (_wrench == null) return;
+            var set = Set;
+            if (!_wrench.IsHeld || !Progress.AreBoltsAvailable(set))
+            {
+                if (_wrenchHole != null) Unfit();
+                ShowGauge(set);
+                return;
+            }
+
+            if (_wrenchHole == null)
+            {
+                var hole = FindBoltUnderSocket(set);
+                if (hole == null) { _refusedHole = null; ShowGauge(set); return; }
+                if (hole == _refusedHole) { ShowGauge(set); return; }
+                var check = set.EngageWrench(hole, _training.RunTime);
+                if (!check.Allowed)
+                {
+                    _refusedHole = hole;
+                    _wrench.Pulse(0.8f, 0.15f);
+                    _training.ShowStatus(Learn ? check.Reason : "Cannot torque this bolt yet.", good: false);
+                    _training.NotifyProgressChanged(); // a logged mistake shows on the debug panel
+                    ShowGauge(set);
+                    return;
+                }
+                Fit(hole, set, check);
+            }
+
+            // Fitted: the wrench pivots on the bolt; the handle points at the hand; clockwise swing turns the bolt.
+            var bolt = set.Get(_wrenchHole);
+            HolePose(bolt.Spec, out var holePos, out var holeRot, out var axis);
+            var pivot = holePos + axis * _boltHeadHeightMetres;
+            var toHand = _wrench.HandPosition - pivot;
+            float offPlane = Vector3.Dot(toHand, axis);
+            var inPlane = toHand - axis * offPlane;
+            if (Mathf.Abs(offPlane) > _detachOffPlaneMetres || inPlane.magnitude > _detachRadiusMetres)
+            {
+                Unfit(); // pulled away: the wrench comes off (keeps the last bolt message on the HUD)
+                return;
+            }
+            if (inPlane.sqrMagnitude > 1e-6f) _wrench.SetPose(pivot, Quaternion.LookRotation(inPlane.normalized, axis));
+
+            float delta = _wrenchTracker.Update(axis.ToNumerics(), inPlane.ToNumerics());
+            if (delta > 0f)
+            {
+                var before = bolt.State;
+                var after = set.WrenchTurn(_wrenchHole, delta, _training.RunTime);
+                SpinBolt(_wrenchHole, delta, holePos, holeRot, axis);
+                RampHaptics(bolt, delta);
+                if (after != before) OnTorqueStateChanged(set, bolt, after);
+            }
+            ShowGauge(set);
+        }
+
+        private string FindBoltUnderSocket(BoltSet set)
+        {
+            string best = null;
+            float bestDist = _fitRadiusMetres;
+            foreach (var rt in _runtimes)
+            {
+                if (rt.Hole == null) continue;
+                var spec = set.Get(rt.Hole).Spec;
+                HolePose(spec, out var holePos, out _, out var axis);
+                float d = Vector3.Distance(_wrench.SocketPosition, holePos + axis * _boltHeadHeightMetres);
+                if (d <= bestDist && Vector3.Angle(_wrench.SocketAxis, axis) <= _fitMaxAngleDegrees)
+                {
+                    best = rt.Hole;
+                    bestDist = d;
+                }
+            }
+            return best;
+        }
+
+        private void Fit(string hole, BoltSet set, WrenchEngageResult check)
+        {
+            _wrenchHole = hole;
+            _refusedHole = null;
+            _wrenchTracker.Reset();
+            _hapticAccumulator = 0f;
+            _wrench.SetFitted(true);
+            _wrench.Pulse(0.4f, 0.05f);
+            _audio.transform.position = _wrench.SocketPosition;
+            _audio.PlayOneShot(_click, 0.4f);
+            var bolt = set.Get(hole);
+            int n = set.Pattern.SequenceNumber(hole);
+            if (Learn)
+                _training.ShowStatus($"Wrench on bolt {n}. Swing the handle clockwise to {bolt.Spec.TorqueSpecNm:0.0} N·m; stop at the click.", good: true);
+            else if (check.Check == WrenchCheck.OutOfOrderAllowed)
+                _training.NotifyProgressChanged(); // logged; Test mode does not explain
+        }
+
+        private void Unfit()
+        {
+            _wrenchHole = null;
+            _wrenchTracker.Reset();
+            _wrench.SetFitted(false);
+        }
+
+        private void OnWrenchReleased(WrenchAdapter wrench)
+        {
+            if (_wrenchHole != null) Unfit();
+            _refusedHole = null;
+        }
+
+        private void SpinBolt(string hole, float delta, Vector3 holePos, Quaternion holeRot, Vector3 axis)
+        {
+            foreach (var rt in _runtimes)
+            {
+                if (rt.Hole != hole) continue;
+                rt.SpinDegrees += delta;
+                rt.Adapter.SetPose(holePos, holeRot * Quaternion.Euler(0f, rt.SpinDegrees, 0f));
+                return;
+            }
+        }
+
+        /// <summary>Controller haptics: a tick every few degrees, stronger as torque approaches spec.</summary>
+        private void RampHaptics(BoltTightening bolt, float delta)
+        {
+            _hapticAccumulator += delta;
+            if (_hapticAccumulator < _hapticStepDegrees) return;
+            _hapticAccumulator = 0f;
+            float k = Mathf.Clamp01(bolt.TorqueNm / bolt.Spec.TorqueSpecNm);
+            _wrench.Pulse(Mathf.Lerp(0.05f, 0.45f, k * k), 0.02f);
+        }
+
+        private void OnTorqueStateChanged(BoltSet set, BoltTightening bolt, BoltState state)
+        {
+            int n = set.Pattern.SequenceNumber(bolt.Spec.HoleId);
+            if (state == BoltState.Torqued)
+            {
+                _wrench.Pulse(1f, 0.12f);
+                _audio.transform.position = _wrench.SocketPosition;
+                _audio.PlayOneShot(_click, 1f);
+                var next = set.NextInPattern;
+                string msg;
+                if (set.IsComplete) msg = "All bolts torqued.";
+                else if (Learn) msg = $"Bolt {n} torqued ({bolt.TorqueNm:0.0} N·m). Next: bolt {set.Pattern.SequenceNumber(next)}.";
+                else msg = "Bolt torqued.";
+                _training.ShowStatus(msg, good: true);
+            }
+            else if (state == BoltState.OverTorqued)
+            {
+                _wrench.Pulse(1f, 0.4f);
+                _training.ShowStatus(Learn
+                    ? $"Over-torqued: bolt {n} at {bolt.TorqueNm:0.0} N·m (max {bolt.Spec.MaxTorqueNm:0.0}). Stop at the click."
+                    : "Over-torqued.", good: false);
+            }
+            _training.NotifyProgressChanged();
+        }
+
+        private void ShowGauge(BoltSet set)
+        {
+            if (_gauge == null || set == null) return;
+            if (_wrenchHole == null) { _gauge.ShowIdle(set.Bolts[0].Spec.TorqueSpecNm); return; }
+            var bolt = set.Get(_wrenchHole);
+            _gauge.Show(bolt.TorqueNm, bolt.Spec.TorqueSpecNm, bolt.State);
+        }
+
+        // ---------------- Learn: pattern numbers ----------------
+
+        private void UpdateNumbers()
+        {
+            if (_numberPrefab == null) return;
+            var set = Set;
+            bool show = Learn && Progress.AreBoltsAvailable(set) && !set.IsComplete;
+            string next = set.AllSeated ? set.NextInPattern : null; // highlight only once torquing starts
+            foreach (var bolt in set.Bolts)
+            {
+                var hole = bolt.Spec.HoleId;
+                if (!_numbers.TryGetValue(hole, out var view))
+                {
+                    if (!show) continue;
+                    view = Instantiate(_numberPrefab, transform);
+                    view.name = "Pattern Number " + hole;
+                    _numbers[hole] = view;
+                }
+                if (!show) { view.Hide(); continue; }
+                HolePose(bolt.Spec, out var pos, out _, out var axis);
+                var look = bolt.State == BoltState.OverTorqued || bolt.State == BoltState.CrossThreaded ? FloatingNumberView.Look.Fault
+                    : bolt.IsFinished ? FloatingNumberView.Look.Done
+                    : hole == next ? FloatingNumberView.Look.Next
+                    : FloatingNumberView.Look.Normal;
+                view.Show(set.Pattern.SequenceNumber(hole), pos + axis * _numberHeightMetres, look);
             }
         }
 
@@ -260,6 +489,13 @@ namespace EVTrainer.App
             position = default;
             var data = Data;
             if (data == null) return false;
+            if (_wrench != null && (_wrench.IsHeld || _wrench.IsHovered))
+            {
+                title = data.wrenchName;
+                hint = data.wrenchHint;
+                position = _wrench.transform.position + Vector3.up * 0.08f;
+                return true;
+            }
             BoltRuntime focus = null;
             foreach (var rt in _runtimes) if (rt.Adapter.IsHeld) { focus = rt; break; }
             if (focus == null) foreach (var rt in _runtimes) if (rt.Adapter.IsHovered) { focus = rt; break; }
