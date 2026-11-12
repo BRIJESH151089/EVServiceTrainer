@@ -28,6 +28,10 @@ namespace EVTrainer.App
             [Tooltip("Step text in the HUD, shared by consecutive slots of one type. Empty = \"Fit <display name>\".")]
             public string instruction;
             public PartSymmetry symmetry;
+            [Tooltip("Part name on the Learn-mode label, without a slot number (e.g. \"Battery module\"). Empty = display name.")]
+            public string partName;
+            [Tooltip("One-line Learn-mode hint on the part label (e.g. \"+ terminal faces front\").")]
+            public string hint;
             [Tooltip("Target position relative to the assembly origin (metres).")]
             public Vector3 localPosition;
             [Tooltip("Target rotation relative to the assembly origin (Euler degrees).")]
@@ -64,7 +68,7 @@ namespace EVTrainer.App
                     new PartPose(worldPosition.ToNumerics(), worldRotation.ToNumerics()),
                     p.positionToleranceMetres, p.angleToleranceDegrees,
                     p.requiresTwoHands, p.prerequisites, p.preInstalled, p.instruction,
-                    p.typeId, p.groupName, p.symmetry));
+                    p.typeId, p.groupName, p.symmetry, p.partName, p.hint));
             }
             return new AssemblyDefinition(_id, _title, specs);
         }

@@ -31,7 +31,9 @@ namespace EVTrainer.Core
             string instruction = null,
             string typeId = null,
             string groupName = null,
-            PartSymmetry symmetry = PartSymmetry.None)
+            PartSymmetry symmetry = PartSymmetry.None,
+            string partName = null,
+            string hint = null)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Part id is required.", nameof(id));
             if (positionToleranceMetres < 0f) throw new ArgumentOutOfRangeException(nameof(positionToleranceMetres));
@@ -49,7 +51,15 @@ namespace EVTrainer.Core
             TypeId = string.IsNullOrWhiteSpace(typeId) ? id : typeId;
             GroupName = string.IsNullOrWhiteSpace(groupName) ? DisplayName : groupName;
             Symmetry = symmetry;
+            PartName = string.IsNullOrWhiteSpace(partName) ? DisplayName : partName;
+            Hint = hint ?? "";
         }
+
+        /// <summary>Name of the physical part, without a slot number (e.g. "Battery module"). Used on part labels.</summary>
+        public string PartName { get; }
+
+        /// <summary>One-line handling hint for Learn mode (e.g. "+ terminal faces front"). Empty if none.</summary>
+        public string Hint { get; }
 
         /// <summary>Slot id, unique in the assembly (e.g. "module_2").</summary>
         public string Id { get; }

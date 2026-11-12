@@ -203,6 +203,19 @@ namespace EVTrainer.Tests.EditMode
         }
 
         [Test]
+        public void PartNameAndHint_DefaultToDisplayNameAndEmpty_OrComeFromData()
+        {
+            var plain = new PartSpec("x", "Battery module 2", PartPose.Identity, 0.01f, 5f);
+            var described = new PartSpec("y", "Busbar 1", PartPose.Identity, 0.01f, 5f,
+                partName: "Busbar", hint: "Links - of one module to + of the next");
+
+            Assert.That(plain.PartName, Is.EqualTo("Battery module 2"));
+            Assert.That(plain.Hint, Is.Empty);
+            Assert.That(described.PartName, Is.EqualTo("Busbar"));
+            Assert.That(described.Hint, Is.EqualTo("Links - of one module to + of the next"));
+        }
+
+        [Test]
         public void Instruction_DefaultsToFitDisplayName()
         {
             var def = Pack();
