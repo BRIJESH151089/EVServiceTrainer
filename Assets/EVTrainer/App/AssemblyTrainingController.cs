@@ -48,6 +48,8 @@ namespace EVTrainer.App
         [Tooltip("Learn mode: name + hint label above the hovered or held part.")]
         [SerializeField] private PartLabelView _partLabel;
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.06f;
+        [Tooltip("Bolt hand-start and torque wrench flow (optional; modules without bolts leave it empty).")]
+        [SerializeField] private BoltingController _bolting;
         [Tooltip("Physical Restart push button (within reach). Back to mode selection with all parts staged.")]
         [SerializeField] private PushButtonView _restartButton;
 
@@ -127,7 +129,26 @@ namespace EVTrainer.App
             return n;
         }
 
-        private double RunTime => Time.time - _runStartTime;
+        /// <summary>Seconds since the run started (for the mistake log).</summary>
+        public double RunTime => Time.time - _runStartTime;
+
+        /// <summary>Called by other run-time parts (e.g. bolting) when progress changed: redraw HUD and debug panel.</summary>
+        public void NotifyProgressChanged()
+        {
+            RefreshHud();
+            _nextPanelRefresh = 0f;
+        }
+
+        /// <summary>Status line from another run-time part (e.g. a bolt event), also shown on the debug panel.</summary>
+        public void ShowStatus(string text, bool good)
+        {
+            _extraStatus = (text, good);
+            if (_hud != null && _hud.isActiveAndEnabled) _hud.ShowResult(text, good);
+            _lastInstallText = text;
+            _nextPanelRefresh = 0f;
+        }
+
+        private (string text, bool good)? _extraStatus;
 
         private void Start()
         {
@@ -162,7 +183,10 @@ namespace EVTrainer.App
 
         private void RefreshHud()
         {
-            if (_hud != null) _hud.Render(Progress, LastResult);
+            if (_hud == null) return;
+            _hud.Render(Progress, LastResult);
+            // A bolt message stays on top until the next part result (or until the module is complete).
+            if (_extraStatus.HasValue && !Progress.IsComplete) _hud.ShowResult(_extraStatus.Value.text, _extraStatus.Value.good);
         }
 
         /// <summary>Learn mode: outline the free, fittable slots of the current step.</summary>
@@ -255,6 +279,7 @@ namespace EVTrainer.App
         private void ApplyResult(GrabbablePartAdapter part, PartRelease release, InstallResult result, bool afterSettling)
         {
             LastResult = result;
+            _extraStatus = null;
             _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} [{result.Outcome}] " +
                                $"({release.ItemId}, {release.Source}, {release.Hand}{(afterSettling ? ", after settling" : "")})";
 
@@ -327,7 +352,12 @@ namespace EVTrainer.App
             var slots = focus != null ? _definition.SlotsOfType(focus.PartTypeId) : null;
             if (slots == null || slots.Count == 0)
             {
-                _partLabel.Hide();
+                // Bolts and the torque wrench (Learn only) label themselves through the bolting controller.
+                if (IsRunning && Progress.Mode == TrainingMode.Learn && _bolting != null &&
+                    _bolting.TryGetLabel(out string title, out string hint, out Vector3 at))
+                    _partLabel.Show(title, hint, at);
+                else
+                    _partLabel.Hide();
                 return;
             }
 

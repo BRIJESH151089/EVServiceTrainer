@@ -2130,6 +2130,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 561054050}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &561054052 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 561054050}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1 &575683523
 GameObject:
   m_ObjectHideFlags: 0
@@ -4043,6 +4054,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1096482084}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1096482086 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1096482084}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1001 &1122271814
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4109,6 +4131,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1122271814}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1122271816 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1122271814}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1 &1133238687
 GameObject:
   m_ObjectHideFlags: 0
@@ -5103,6 +5136,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1369065861}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1369065863 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1369065861}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1001 &1446914586
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5623,6 +5667,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1664924022}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1664924024 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1664924022}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1 &1701945463
 GameObject:
   m_ObjectHideFlags: 0
@@ -5779,6 +5834,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1745455958}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1745455960 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1745455958}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1001 &1790943714
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6005,6 +6071,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1809588681}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1809588683 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1809588681}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1001 &1813416251
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6267,6 +6344,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7737870497929318839, guid: fb42275e949f0cf48bef284926c68477, type: 3}
   m_PrefabInstance: {fileID: 1831715347}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1831715349 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 434913599447703588, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+  m_PrefabInstance: {fileID: 1831715347}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
 --- !u!1001 &1901304081
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7198,6 +7286,7 @@ GameObject:
   - component: {fileID: 1991837941}
   - component: {fileID: 1991837940}
   - component: {fileID: 1991837943}
+  - component: {fileID: 1991837944}
   m_Layer: 0
   m_Name: Assembly Training
   m_TagString: Untagged
@@ -7247,6 +7336,7 @@ MonoBehaviour:
   _startPanel: {fileID: 4360011}
   _partLabel: {fileID: 1220447197}
   _labelGapMetres: 0.06
+  _bolting: {fileID: 1991837944}
   _restartButton: {fileID: 357245425}
   _debugPanel: {fileID: 447656227}
   _debugToggle: {fileID: 1991837941}
@@ -7326,6 +7416,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.InteractorStatusReporter
   _interactors: []
+--- !u!114 &1991837944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1991837939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba1d703821eb294498fbee63d96803f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.App::EVTrainer.App.BoltingController
+  _training: {fileID: 1991837940}
+  _module: {fileID: 11400000, guid: 87ebb709d11087f4cb806703917451d9, type: 2}
+  _bolts:
+  - {fileID: 1122271816}
+  - {fileID: 1096482086}
+  - {fileID: 1745455960}
+  - {fileID: 1809588683}
+  - {fileID: 1831715349}
+  - {fileID: 561054052}
+  - {fileID: 1369065863}
+  - {fileID: 1664924024}
+  _captureRadiusMetres: 0.02
+  _captureHeightMetres: 0.06
+  _maxEntryTiltDegrees: 20
+  _engageHeightMetres: 0.012
+  _pullOutMetres: 0.07
+  _startedColor: {r: 0.95, g: 0.8, b: 0.15, a: 1}
+  _torquedColor: {r: 0.25, g: 0.85, b: 0.35, a: 1}
+  _faultColor: {r: 0.9, g: 0.18, b: 0.12, a: 1}
 --- !u!1 &1999591242
 GameObject:
   m_ObjectHideFlags: 0

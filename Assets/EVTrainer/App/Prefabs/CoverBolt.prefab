@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 8649738900319464940}
   - component: {fileID: 4244277946761372587}
   - component: {fileID: 1784447572413623141}
+  - component: {fileID: 434913599447703588}
+  - component: {fileID: 2382069738907825939}
   m_Layer: 0
   m_Name: CoverBolt
   m_TagString: Untagged
@@ -234,6 +236,30 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &434913599447703588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2254994737321598964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
+--- !u!114 &2382069738907825939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2254994737321598964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5853579c4476249429181d2e778f2e1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.PartTint
 --- !u!1 &4176678058712394216
 GameObject:
   m_ObjectHideFlags: 0
