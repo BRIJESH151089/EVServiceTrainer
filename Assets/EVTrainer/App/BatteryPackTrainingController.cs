@@ -26,6 +26,14 @@ namespace EVTrainer.App
         [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.6f;
         [SerializeField, Min(0f)] private float _hapticSeconds = 0.08f;
 
+        [Header("Settle re-check (part dropped just above its seat)")]
+        [SerializeField, Min(0f)] private float _settleMaxHeightMetres = SettleRetryRule.DefaultMaxHeightAboveTargetMetres;
+        [Tooltip("Give the part at least this long to fall before testing whether it has settled.")]
+        [SerializeField, Min(0f)] private float _settleMinSeconds = 0.15f;
+        [SerializeField, Min(0.1f)] private float _settleMaxSeconds = 1f;
+        [SerializeField, Min(0f)] private float _settleLinearSpeed = 0.02f;
+        [SerializeField, Min(0f)] private float _settleAngularSpeed = 0.3f;
+
         [Header("HUD")]
         [SerializeField] private TrainingHudView _hud;
 
@@ -103,14 +111,49 @@ namespace EVTrainer.App
         private void OnPartReleased(PartRelease release)
         {
             if (!_partsById.TryGetValue(release.PartId, out var part)) return;
+            Progress.Definition.TryGetPart(release.PartId, out var spec);
 
             var result = Progress.TryInstall(release.PartId, release.Pose);
+
+            // Dropped just above its seat: let physics settle it, then check once more.
+            if (SettleRetryRule.IsEligible(result, spec, release.Pose, _settleMaxHeightMetres))
+            {
+                StartCoroutine(RetryWhenSettled(part, spec, release));
+                return;
+            }
+
+            ApplyResult(part, spec, release, result, afterSettling: false);
+        }
+
+        /// <summary>One retry per release: waits until the part rests (max <see cref="_settleMaxSeconds"/>),
+        /// then calls TryInstall with the settled pose. Cancelled if the part is grabbed again.</summary>
+        private System.Collections.IEnumerator RetryWhenSettled(GrabbablePartAdapter part, PartSpec spec,
+            PartRelease release)
+        {
+            var waitPhysics = new WaitForFixedUpdate();
+            float start = Time.time;
+            int settledSteps = 0;
+            while (Time.time - start < _settleMaxSeconds)
+            {
+                yield return waitPhysics;
+                if (part.IsHeld || part.IsLocked) yield break; // trainee took it back; that release is void
+                if (Time.time - start < _settleMinSeconds) continue;
+                settledSteps = part.IsSettled(_settleLinearSpeed, _settleAngularSpeed) ? settledSteps + 1 : 0;
+                if (settledSteps >= 3) break;
+            }
+
+            var result = Progress.TryInstall(spec.Id, part.CurrentPose);
+            ApplyResult(part, spec, release, result, afterSettling: true);
+        }
+
+        private void ApplyResult(GrabbablePartAdapter part, PartSpec spec, PartRelease release, InstallResult result, bool afterSettling)
+        {
             LastResult = result;
-            _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} ({release.Source}, {release.Hand})";
+            _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} " +
+                               $"({release.Source}, {release.Hand}{(afterSettling ? ", after settling" : "")})";
 
             if (result.IsInstalled)
             {
-                Progress.Definition.TryGetPart(release.PartId, out var spec);
                 part.LockAt(spec.TargetPose, _snapSeconds);
                 part.PulseReleasingController(_hapticAmplitude, _hapticSeconds);
                 var feedback = part.GetComponent<SnapFeedback>();
@@ -126,6 +169,7 @@ namespace EVTrainer.App
         {
             RenderHand(_leftHand, _leftHandVisual);
             RenderHand(_rightHand, _rightHandVisual);
+            UpdateHoverPreview();
 
             if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
             {
@@ -133,6 +177,24 @@ namespace EVTrainer.App
                 _nextPanelRefresh = 0f;
             }
             UpdateDebugPanel();
+        }
+
+        /// <summary>
+        /// Learn mode: while the trainee holds the part whose ghost is shown, evaluate its pose each frame
+        /// and tint the ghost green when a release now would install it. Feedback only; nothing is installed.
+        /// One SnapEvaluator call per frame for the held part, so no throttling is needed.
+        /// </summary>
+        private void UpdateHoverPreview()
+        {
+            if (_ghosts == null || Progress.Mode != TrainingMode.Learn) return;
+            string id = _ghosts.VisiblePartId;
+            bool ready = false;
+            if (id != null && _partsById.TryGetValue(id, out var part) && part.IsHeld && !part.IsLocked
+                && Progress.Definition.TryGetPart(id, out var spec))
+            {
+                ready = SnapEvaluator.Evaluate(spec, part.CurrentPose).IsWithinTolerance;
+            }
+            _ghosts.SetReady(ready);
         }
 
         private void UpdateDebugPanel()

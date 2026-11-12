@@ -94,6 +94,17 @@ namespace EVTrainer.XR
             Released?.Invoke(new PartRelease(_partId, CurrentPose, SourceOf(interactor), HandOf(interactor)));
         }
 
+        /// <summary>
+        /// True when the part has come to rest under physics: its Rigidbody is sleeping, kinematic,
+        /// or moving slower than the given thresholds.
+        /// </summary>
+        public bool IsSettled(float maxLinearSpeed, float maxAngularSpeed)
+        {
+            if (_rigidbody == null || _rigidbody.isKinematic || _rigidbody.IsSleeping()) return true;
+            return _rigidbody.linearVelocity.magnitude <= maxLinearSpeed
+                && _rigidbody.angularVelocity.magnitude <= maxAngularSpeed;
+        }
+
         /// <summary>Haptic pulse on the controller that last released this part. Hands have no haptics.</summary>
         public void PulseReleasingController(float amplitude, float duration)
         {
