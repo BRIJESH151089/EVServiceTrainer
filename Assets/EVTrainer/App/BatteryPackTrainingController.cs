@@ -195,6 +195,9 @@ namespace EVTrainer.App
             if (slot != null && SettleRetryRule.IsEligible(preview, slot, release.Pose, _settleMaxHeightMetres))
             {
                 StartCoroutine(RetryWhenSettled(part, release));
+                if (_hud != null) _hud.ShowNotice("Checking fit…", warning: false);
+                _lastInstallText = $"Checking fit… ({release.ItemId})";
+                _nextPanelRefresh = 0f;
                 return;
             }
 
@@ -211,7 +214,11 @@ namespace EVTrainer.App
             while (Time.time - start < _settleMaxSeconds)
             {
                 yield return waitPhysics;
-                if (part.IsCarried || part.IsLocked) yield break; // trainee took it back; that release is void
+                if (part.IsCarried || part.IsLocked)
+                {
+                    RefreshHud(); // trainee took it back; that release is void
+                    yield break;
+                }
                 if (Time.time - start < _settleMinSeconds) continue;
                 settledSteps = part.IsSettled(_settleLinearSpeed, _settleAngularSpeed) ? settledSteps + 1 : 0;
                 if (settledSteps >= 3) break;
