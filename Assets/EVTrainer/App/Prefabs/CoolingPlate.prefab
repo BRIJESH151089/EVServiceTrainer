@@ -261,7 +261,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f1978afe768f4b4ca99a27d860c3772, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.GrabbablePartAdapter
-  _partId: cooling_plate
+  _partTypeId: cooling_plate
 --- !u!114 &575927047763894303
 MonoBehaviour:
   m_ObjectHideFlags: 0

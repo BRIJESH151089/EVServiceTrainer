@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using EVTrainer.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -9,18 +10,24 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace EVTrainer.XR
 {
-    /// <summary>A part released by the trainee: where it was let go and by what.</summary>
+    /// <summary>A part released by the trainee: what it is, where it was let go and by what.</summary>
     public readonly struct PartRelease
     {
-        public PartRelease(string partId, PartPose pose, InputSource source, string hand)
+        public PartRelease(string typeId, string itemId, PartPose pose, InputSource source, string hand)
         {
-            PartId = partId;
+            TypeId = typeId;
+            ItemId = itemId;
             Pose = pose;
             Source = source;
             Hand = hand;
         }
 
-        public string PartId { get; }
+        /// <summary>Part type in the module definition (identical parts share it).</summary>
+        public string TypeId { get; }
+
+        /// <summary>This physical part (its GameObject name), used for per-part attempt tracking.</summary>
+        public string ItemId { get; }
+
         public PartPose Pose { get; }
         public InputSource Source { get; }
 
@@ -35,15 +42,23 @@ namespace EVTrainer.XR
     [RequireComponent(typeof(XRGrabInteractable))]
     public sealed class GrabbablePartAdapter : MonoBehaviour
     {
-        [Tooltip("Id of the part in the module definition.")]
-        [SerializeField] private string _partId;
+        [Tooltip("Part type in the module definition (e.g. battery_module). Identical parts share a type.")]
+        [FormerlySerializedAs("_partId")]
+        [SerializeField] private string _partTypeId;
 
         private XRGrabInteractable _grab;
         private Rigidbody _rigidbody;
         private IXRSelectInteractor _lastInteractor;
-        private Coroutine _lockRoutine;
+        private Coroutine _moveRoutine;
+        private PartPose _stagingPose;
 
-        public string PartId => _partId;
+        public string PartTypeId => _partTypeId;
+
+        /// <summary>Unique name of this physical part (its GameObject name).</summary>
+        public string ItemId => name;
+
+        /// <summary>Where the part was laid out at start (its staging position).</summary>
+        public PartPose StagingPose => _stagingPose;
 
         public bool IsHeld { get; private set; }
 
@@ -58,12 +73,13 @@ namespace EVTrainer.XR
 
         /// <summary>Raised when the trainee lets go of the part. Not raised for cancelled selections
         /// (e.g. hand tracking lost) so a drop caused by tracking loss never installs a part.</summary>
-        public event Action<PartRelease> Released;
+        public event Action<GrabbablePartAdapter, PartRelease> Released;
 
         private void Awake()
         {
             _grab = GetComponent<XRGrabInteractable>();
             _rigidbody = GetComponent<Rigidbody>();
+            _stagingPose = CurrentPose;
         }
 
         private void OnEnable()
@@ -76,6 +92,13 @@ namespace EVTrainer.XR
         {
             _grab.selectEntered.RemoveListener(OnSelectEntered);
             _grab.selectExited.RemoveListener(OnSelectExited);
+        }
+
+        /// <summary>Allows or blocks grabbing (e.g. before a training mode is chosen). Ignored once locked.</summary>
+        public void SetGrabbable(bool grabbable)
+        {
+            if (IsLocked) return;
+            _grab.enabled = grabbable;
         }
 
         private void OnSelectEntered(SelectEnterEventArgs args)
@@ -91,7 +114,7 @@ namespace EVTrainer.XR
 
             var interactor = args.interactorObject;
             _lastInteractor = interactor;
-            Released?.Invoke(new PartRelease(_partId, CurrentPose, SourceOf(interactor), HandOf(interactor)));
+            Released?.Invoke(this, new PartRelease(_partTypeId, ItemId, CurrentPose, SourceOf(interactor), HandOf(interactor)));
         }
 
         /// <summary>
@@ -121,16 +144,23 @@ namespace EVTrainer.XR
         {
             if (IsLocked) return;
             IsLocked = true;
-            if (_lockRoutine != null) StopCoroutine(_lockRoutine);
-            _lockRoutine = StartCoroutine(LockRoutine(target.Position.ToUnity(), target.Rotation.ToUnity(), duration));
+            StartMove(target, duration, staysLocked: true);
         }
 
-        private IEnumerator LockRoutine(Vector3 targetPosition, Quaternion targetRotation, float duration)
+        private void StartMove(PartPose target, float duration, bool staysLocked)
+        {
+            if (_moveRoutine != null) StopCoroutine(_moveRoutine);
+            _moveRoutine = StartCoroutine(MoveRoutine(target.Position.ToUnity(), target.Rotation.ToUnity(), duration, staysLocked));
+        }
+
+        private IEnumerator MoveRoutine(Vector3 targetPosition, Quaternion targetRotation, float duration, bool staysLocked)
         {
             // Let XRI finish detaching this frame (it restores Rigidbody state and applies throw velocity).
             yield return null;
 
             _grab.enabled = false;
+            bool wasKinematic = _rigidbody != null && _rigidbody.isKinematic;
+            var interpolation = _rigidbody != null ? _rigidbody.interpolation : RigidbodyInterpolation.None;
             if (_rigidbody != null)
             {
                 if (!_rigidbody.isKinematic)
@@ -153,7 +183,19 @@ namespace EVTrainer.XR
                 yield return null;
             }
             transform.SetPositionAndRotation(targetPosition, targetRotation);
-            _lockRoutine = null;
+
+            if (!staysLocked)
+            {
+                if (_rigidbody != null)
+                {
+                    _rigidbody.position = targetPosition;
+                    _rigidbody.rotation = targetRotation;
+                    _rigidbody.isKinematic = wasKinematic;
+                    _rigidbody.interpolation = interpolation;
+                }
+                _grab.enabled = true;
+            }
+            _moveRoutine = null;
         }
 
         private void Refresh()

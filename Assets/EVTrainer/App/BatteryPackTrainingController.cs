@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using EVTrainer.Core;
 using EVTrainer.Rendering;
@@ -10,7 +11,7 @@ namespace EVTrainer.App
     /// <summary>
     /// Composition root for the battery pack training scene. Builds the Core assembly from the
     /// module data, sends every part release to <see cref="AssemblyProgress.TryInstall"/> and drives
-    /// the snap (lock, haptics, sound, highlight) and the panels from the result.
+    /// the snap (lock, haptics, sound, highlight), ghosts and panels from the result.
     /// </summary>
     public sealed class BatteryPackTrainingController : MonoBehaviour
     {
@@ -49,38 +50,47 @@ namespace EVTrainer.App
         [SerializeField] private HandJointVisual _rightHandVisual;
         [SerializeField, Min(1f)] private float _panelRefreshHz = 15f;
 
-        private readonly Dictionary<string, GrabbablePartAdapter> _partsById = new Dictionary<string, GrabbablePartAdapter>();
+        private readonly List<string> _ghostSlots = new List<string>();
+        private AssemblyDefinition _definition;
         private float _nextPanelRefresh;
         private string _lastInstallText;
+        private float _runStartTime;
+        private InstallResult? _lastEvaluation;
 
         public AssemblyProgress Progress { get; private set; }
         public InstallResult? LastResult { get; private set; }
 
         private void Awake()
         {
-            var definition = _module.ToCore(_assemblyOrigin);
-            Progress = new AssemblyProgress(definition, TrainingMode.Learn);
-
+            _definition = _module.ToCore(_assemblyOrigin);
             foreach (var part in _parts)
             {
-                if (!definition.TryGetPart(part.PartId, out _))
-                {
-                    Debug.LogError($"Part '{part.PartId}' on {part.name} is not in module '{definition.Id}'.", part);
-                    continue;
-                }
-                _partsById[part.PartId] = part;
+                if (_definition.SlotsOfType(part.PartTypeId).Count == 0)
+                    Debug.LogError($"Part type '{part.PartTypeId}' on {part.name} is not in module '{_definition.Id}'.", part);
             }
 
             if (_ghosts != null)
             {
-                foreach (var spec in definition.Parts)
+                foreach (var spec in _definition.Parts)
                     _ghosts.Place(spec.Id, spec.TargetPose.Position.ToUnity(), spec.TargetPose.Rotation.ToUnity());
             }
+
+            BeginRun(TrainingMode.Learn);
         }
+
+        private void BeginRun(TrainingMode mode)
+        {
+            Progress = new AssemblyProgress(_definition, mode);
+            LastResult = null;
+            _lastInstallText = null;
+            _runStartTime = Time.time;
+        }
+
+        private double RunTime => Time.time - _runStartTime;
 
         private void Start()
         {
-            RefreshGhost();
+            RefreshGhosts();
             RefreshHud();
         }
 
@@ -89,13 +99,20 @@ namespace EVTrainer.App
             if (_hud != null) _hud.Render(Progress, LastResult);
         }
 
-        /// <summary>Learn mode: outline only the current part, and only while it can be fitted.</summary>
-        private void RefreshGhost()
+        /// <summary>Learn mode: outline the free, fittable slots of the current step.</summary>
+        private void RefreshGhosts()
         {
             if (_ghosts == null) return;
-            var current = Progress.CurrentPart;
-            bool show = Progress.Mode == TrainingMode.Learn && current != null && Progress.IsAvailable(current.Id);
-            _ghosts.Show(show ? current.Id : null);
+            _ghostSlots.Clear();
+            var step = Progress.CurrentStep;
+            if (Progress.Mode == TrainingMode.Learn && step != null)
+            {
+                foreach (var slot in step.Slots)
+                {
+                    if (Progress.IsAvailable(slot.Id)) _ghostSlots.Add(slot.Id);
+                }
+            }
+            _ghosts.Show(_ghostSlots);
         }
 
         private void OnEnable()
@@ -108,27 +125,24 @@ namespace EVTrainer.App
             foreach (var part in _parts) part.Released -= OnPartReleased;
         }
 
-        private void OnPartReleased(PartRelease release)
+        private void OnPartReleased(GrabbablePartAdapter part, PartRelease release)
         {
-            if (!_partsById.TryGetValue(release.PartId, out var part)) return;
-            Progress.Definition.TryGetPart(release.PartId, out var spec);
+            var preview = Progress.Evaluate(release.TypeId, release.Pose);
+            _definition.TryGetPart(preview.PartId, out var slot);
 
-            var result = Progress.TryInstall(release.PartId, release.Pose);
-
-            // Dropped just above its seat: let physics settle it, then check once more.
-            if (SettleRetryRule.IsEligible(result, spec, release.Pose, _settleMaxHeightMetres))
+            // Dropped just above its seat: let physics settle it, then judge (and log) only the settled pose.
+            if (slot != null && SettleRetryRule.IsEligible(preview, slot, release.Pose, _settleMaxHeightMetres))
             {
-                StartCoroutine(RetryWhenSettled(part, spec, release));
+                StartCoroutine(RetryWhenSettled(part, release));
                 return;
             }
 
-            ApplyResult(part, spec, release, result, afterSettling: false);
+            ApplyResult(part, release, Progress.TryInstall(release.TypeId, release.Pose, RunTime, release.ItemId), afterSettling: false);
         }
 
-        /// <summary>One retry per release: waits until the part rests (max <see cref="_settleMaxSeconds"/>),
+        /// <summary>One check per release: waits until the part rests (max <see cref="_settleMaxSeconds"/>),
         /// then calls TryInstall with the settled pose. Cancelled if the part is grabbed again.</summary>
-        private System.Collections.IEnumerator RetryWhenSettled(GrabbablePartAdapter part, PartSpec spec,
-            PartRelease release)
+        private IEnumerator RetryWhenSettled(GrabbablePartAdapter part, PartRelease release)
         {
             var waitPhysics = new WaitForFixedUpdate();
             float start = Time.time;
@@ -142,23 +156,23 @@ namespace EVTrainer.App
                 if (settledSteps >= 3) break;
             }
 
-            var result = Progress.TryInstall(spec.Id, part.CurrentPose);
-            ApplyResult(part, spec, release, result, afterSettling: true);
+            var result = Progress.TryInstall(release.TypeId, part.CurrentPose, RunTime, release.ItemId);
+            ApplyResult(part, release, result, afterSettling: true);
         }
 
-        private void ApplyResult(GrabbablePartAdapter part, PartSpec spec, PartRelease release, InstallResult result, bool afterSettling)
+        private void ApplyResult(GrabbablePartAdapter part, PartRelease release, InstallResult result, bool afterSettling)
         {
             LastResult = result;
             _lastInstallText = $"{InstallResultText.Describe(result, Progress.Definition)} " +
-                               $"({release.Source}, {release.Hand}{(afterSettling ? ", after settling" : "")})";
+                               $"({release.ItemId}, {release.Source}, {release.Hand}{(afterSettling ? ", after settling" : "")})";
 
             if (result.IsInstalled)
             {
-                part.LockAt(spec.TargetPose, _snapSeconds);
+                part.LockAt(result.SnapPose, _snapSeconds);
                 part.PulseReleasingController(_hapticAmplitude, _hapticSeconds);
                 var feedback = part.GetComponent<SnapFeedback>();
                 if (feedback != null) feedback.PlayInstalled();
-                RefreshGhost();
+                RefreshGhosts();
             }
 
             RefreshHud();
@@ -169,7 +183,7 @@ namespace EVTrainer.App
         {
             RenderHand(_leftHand, _leftHandVisual);
             RenderHand(_rightHand, _rightHandVisual);
-            UpdateHoverPreview();
+            UpdateHeldPreview();
 
             if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
             {
@@ -180,21 +194,21 @@ namespace EVTrainer.App
         }
 
         /// <summary>
-        /// Learn mode: while the trainee holds the part whose ghost is shown, evaluate its pose each frame
-        /// and tint the ghost green when a release now would install it. Feedback only; nothing is installed.
-        /// One SnapEvaluator call per frame for the held part, so no throttling is needed.
+        /// Evaluates the held part (Core, no side effects) every frame. Learn mode: tints the ghost of the slot
+        /// it would install into green ("release now"). A few Evaluate calls per frame; no throttling needed.
         /// </summary>
-        private void UpdateHoverPreview()
+        private void UpdateHeldPreview()
         {
-            if (_ghosts == null || Progress.Mode != TrainingMode.Learn) return;
-            string id = _ghosts.VisiblePartId;
-            bool ready = false;
-            if (id != null && _partsById.TryGetValue(id, out var part) && part.IsHeld && !part.IsLocked
-                && Progress.Definition.TryGetPart(id, out var spec))
+            string ready = null;
+            _lastEvaluation = null;
+            foreach (var part in _parts)
             {
-                ready = SnapEvaluator.Evaluate(spec, part.CurrentPose).IsWithinTolerance;
+                if (!part.IsHeld || part.IsLocked) continue;
+                var e = Progress.Evaluate(part.PartTypeId, part.CurrentPose);
+                _lastEvaluation = e;
+                if (e.IsInstalled) ready = e.PartId;
             }
-            _ghosts.SetReady(ready);
+            if (_ghosts != null) _ghosts.SetReady(Progress.Mode == TrainingMode.Learn ? ready : null);
         }
 
         private void UpdateDebugPanel()
@@ -203,18 +217,22 @@ namespace EVTrainer.App
             if (Time.unscaledTime < _nextPanelRefresh) return;
             _nextPanelRefresh = Time.unscaledTime + 1f / _panelRefreshHz;
 
-            // Live error of the current part (or the last part once complete).
-            var spec = Progress.CurrentPart ?? Progress.Definition.Parts[Progress.Definition.Parts.Count - 1];
-            var evaluation = _partsById.TryGetValue(spec.Id, out var part)
-                ? SnapEvaluator.Evaluate(spec, part.CurrentPose)
-                : default;
-            bool held = part != null && part.IsHeld;
+            // Live error of the held part against the slot it would go into.
+            GrabbablePartAdapter held = null;
+            foreach (var part in _parts) if (part.IsHeld) { held = part; break; }
+            var evaluation = _lastEvaluation?.Evaluation ?? default;
+            float posTol = 0f, angTol = 0f;
+            if (_lastEvaluation.HasValue && _definition.TryGetPart(_lastEvaluation.Value.PartId, out var slot))
+            {
+                posTol = slot.PositionToleranceMetres;
+                angTol = slot.AngleToleranceDegrees;
+            }
 
             _debugPanel.Render(new DebugPanelData(
                 ActiveFrame(_leftHand, _leftInput),
                 ActiveFrame(_rightHand, _rightInput),
-                held, held ? part.HeldBy : "",
-                evaluation, spec.PositionToleranceMetres, spec.AngleToleranceDegrees,
+                held != null, held != null ? $"{held.HeldBy}: {held.ItemId}" : "",
+                evaluation, posTol, angTol,
                 _lastInstallText));
         }
 
