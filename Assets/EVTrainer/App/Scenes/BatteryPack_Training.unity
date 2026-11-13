@@ -5626,6 +5626,7 @@ MonoBehaviour:
   _gauge: {fileID: 741083034}
   _boltHeadHeightMetres: 0.007
   _hapticStepDegrees: 4
+  _minFloatHeightMetres: 0.92
   _numberPrefab: {fileID: 8939873600690049485, guid: d6b1400d9f7cff94eb86340665a61e02, type: 3}
   _numberHeightMetres: 0.05
   _startedColor: {r: 0.95, g: 0.8, b: 0.15, a: 1}

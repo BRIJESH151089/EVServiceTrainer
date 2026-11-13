@@ -99,6 +99,11 @@ namespace EVTrainer.App
             [Min(0.02f)] public float wrenchDetachOffPlaneMetres = 0.15f;
             [Tooltip("Soft ratchet click every this many degrees of back-swing.")]
             [Min(1f)] public float ratchetClickDegrees = 6f;
+            [Header("Tools never fall")]
+            [Tooltip("Let go further than this from the trainee's head, the wrench glides back to its stand instead of floating.")]
+            [Min(0.2f)] public float toolFloatMaxDistanceMetres = 1f;
+            [Tooltip("Seconds for the wrench (to its stand) or a loose bolt (to the tray) to glide back.")]
+            [Min(0.05f)] public float toolReturnSeconds = 0.6f;
             [Header("Learn-mode labels")]
             public string boltName = "Bolt";
             public string boltHint;

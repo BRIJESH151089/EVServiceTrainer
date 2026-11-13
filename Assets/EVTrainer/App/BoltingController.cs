@@ -41,6 +41,8 @@ namespace EVTrainer.App
         [SerializeField, Min(0f)] private float _boltHeadHeightMetres = 0.007f;
         [Tooltip("A haptic tick every this many degrees of swing, stronger as torque rises toward spec.")]
         [SerializeField, Min(0.5f)] private float _hapticStepDegrees = 4f;
+        [Tooltip("Let go below this height (the bench top), the wrench goes back to its stand instead of floating.")]
+        [SerializeField] private float _minFloatHeightMetres = 0.92f;
 
         [Header("Learn: pattern numbers")]
         [SerializeField] private FloatingNumberView _numberPrefab;
@@ -68,6 +70,7 @@ namespace EVTrainer.App
         private PartLabelView _tipLabel;
         private float _tipHideTime;
         private RatchetSwing _swing;
+        private ToolRelease? _wrenchRelease; // how the wrench was last let go (debug panel)
         private PartTint _wrenchTint;
         private bool _grabbableApplied;
         private bool _grabbable;
@@ -118,7 +121,11 @@ namespace EVTrainer.App
                 b.Grabbed += OnBoltGrabbed;
                 b.Released += OnBoltReleased;
             }
-            if (_wrench != null) _wrench.Released += OnWrenchReleased;
+            if (_wrench != null)
+            {
+                _wrench.Released += OnWrenchReleased;
+                _wrench.Grabbed += OnWrenchGrabbed;
+            }
         }
 
         private void OnDisable()
@@ -128,7 +135,11 @@ namespace EVTrainer.App
                 b.Grabbed -= OnBoltGrabbed;
                 b.Released -= OnBoltReleased;
             }
-            if (_wrench != null) _wrench.Released -= OnWrenchReleased;
+            if (_wrench != null)
+            {
+                _wrench.Released -= OnWrenchReleased;
+                _wrench.Grabbed -= OnWrenchGrabbed;
+            }
         }
 
         private void Update()
@@ -188,9 +199,9 @@ namespace EVTrainer.App
         {
             if (_wrench == null) return;
             var set = Set;
+            // Not held: resting on the stand, floating where it was let go, or parked on a bolt (the adapter keeps its pose).
             if (!_wrench.IsHeld || !Progress.AreBoltsAvailable(set))
             {
-                if (_wrenchHole != null) Detach();
                 ShowGauge(set);
                 return;
             }
@@ -238,6 +249,13 @@ namespace EVTrainer.App
                 SpinBolt(_wrenchHole, step.DriveDegrees, holePos, holeRot, axis);
                 RampHaptics(bolt, step.DriveDegrees);
                 if (after != before) OnTorqueStateChanged(set, bolt, after);
+                if (bolt.IsFinished)
+                {
+                    // Done: the wrench comes off by itself and stays in the hand, ready for the next bolt.
+                    Detach();
+                    ShowGauge(set);
+                    return;
+                }
             }
             if (step.BackClicks > 0)
             {
@@ -265,7 +283,7 @@ namespace EVTrainer.App
             var mouth = _wrench.SocketMouth;
             foreach (var rt in _runtimes)
             {
-                if (rt.Hole == null) continue;
+                if (rt.Hole == null || set.Get(rt.Hole).IsFinished) continue; // a finished bolt never takes the wrench again
                 HolePose(set.Get(rt.Hole).Spec, out var holePos, out _, out var axis);
                 var headTop = holePos + axis * _boltHeadHeightMetres;
                 if (!wrenchSpec.IsOnHead(mouth.ToNumerics(), _wrench.SocketAxis.ToNumerics(), headTop.ToNumerics(), axis.ToNumerics()))
@@ -313,10 +331,44 @@ namespace EVTrainer.App
             _wrench.SetAttached(false);
         }
 
+        /// <summary>
+        /// Tools never fall (Core <see cref="ToolReleaseRule"/>): let go on an unfinished bolt it stays parked there; let go in
+        /// reach it floats where it is; let go low (below the bench top) or far away it glides back to the stand.
+        /// </summary>
         private void OnWrenchReleased(WrenchAdapter wrench)
         {
-            if (_wrenchHole != null) Detach();
             _refusedHole = null;
+            var set = Set;
+            var data = Data;
+            bool attached = _wrenchHole != null && set != null;
+            bool finished = attached && set.Get(_wrenchHole).IsFinished;
+            var position = _wrench.transform.position;
+            var head = Camera.main != null ? Camera.main.transform.position : position;
+            var release = ToolReleaseRule.ForWrench(attached, finished, position.y, _minFloatHeightMetres,
+                Vector3.Distance(head, position), data != null ? data.toolFloatMaxDistanceMetres : 1f);
+            _wrenchRelease = release;
+            switch (release)
+            {
+                case ToolRelease.ParkOnBolt:
+                    _swing = null; // restarts from the handle when grabbed again
+                    if (Learn) _training.ShowStatus($"Wrench left on bolt {set.Pattern.SequenceNumber(_wrenchHole)}. Grab the handle to continue.", good: true);
+                    break;
+                case ToolRelease.FloatInPlace:
+                    if (attached) Detach();
+                    _wrench.HoldStill();
+                    break;
+                default:
+                    if (attached) Detach();
+                    _wrench.ReturnHome(data != null ? data.toolReturnSeconds : 0.6f);
+                    break;
+            }
+        }
+
+        /// <summary>Picked up again while parked on a bolt: continue from where the handle is.</summary>
+        private void OnWrenchGrabbed(WrenchAdapter wrench)
+        {
+            _wrenchRelease = null;
+            if (_wrenchHole != null && Set != null) _swing = new RatchetSwing(Set.Spec.Wrench);
         }
 
         /// <summary>One debug-panel line: wrench state, attached bolt, handle angle, torque.</summary>
@@ -327,10 +379,13 @@ namespace EVTrainer.App
             if (_wrenchHole != null && set != null)
             {
                 var b = set.Get(_wrenchHole);
-                return $"Wrench: ATTACHED bolt {set.Pattern.SequenceNumber(_wrenchHole)} ({_wrenchHole}) | " +
+                return $"Wrench: {(_wrench.IsHeld ? "ATTACHED" : "PARKED on")} bolt {set.Pattern.SequenceNumber(_wrenchHole)} ({_wrenchHole}) | " +
                        $"angle {_lastHandleAngle:0}° | torque {b.TorqueNm:0.0} N·m | {b.State}";
             }
-            if (!_wrench.IsHeld) return "Wrench: not held";
+            if (!_wrench.IsHeld)
+                return _wrench.IsReturningHome ? "Wrench: returning to the stand"
+                    : _wrenchRelease == ToolRelease.FloatInPlace ? "Wrench: floating where it was let go"
+                    : "Wrench: not held";
             string nearest = "";
             if (set != null)
             {
@@ -481,11 +536,11 @@ namespace EVTrainer.App
         /// A free bolt let go near a hole drops in: straight enough it stands upright, Started (twist to thread);
         /// more tilted it sits crooked, cross-threaded (pull it out). Otherwise it just falls.
         /// </summary>
-        private void TryDropIn(BoltRuntime rt, BoltSet set)
+        private bool TryDropIn(BoltRuntime rt, BoltSet set)
         {
-            if (!Progress.AreBoltsAvailable(set)) return;
+            if (!Progress.AreBoltsAvailable(set)) return false;
             var hole = DropHoleFor(rt, set);
-            if (hole == null) return;
+            if (hole == null) return false;
 
             float tilt = set.TiltDegrees(hole, rt.Adapter.transform.up.ToNumerics());
             var state = set.DropIn(hole, tilt, _training.RunTime);
@@ -513,6 +568,7 @@ namespace EVTrainer.App
                     : "Bolt jammed: cross-threaded.", good: false);
             }
             _training.NotifyProgressChanged();
+            return true;
         }
 
         /// <summary>Learn: short "keep it straight" tip floating over a bolt that was straightened for the trainee.</summary>
@@ -576,8 +632,10 @@ namespace EVTrainer.App
         private void OnBoltReleased(BoltAdapter adapter)
         {
             if (!_byAdapter.TryGetValue(adapter, out var rt) || Set == null) return;
-            if (rt.Hole == null) TryDropIn(rt, Set);
-            // A bolt already in a hole (started / cross-threaded) stays there, locked in place.
+            if (rt.Hole != null) return; // already in a hole (started / cross-threaded): stays there, locked in place
+            bool inHole = TryDropIn(rt, Set);
+            if (ToolReleaseRule.ForBolt(inHole) == BoltRelease.ReturnToTray)
+                adapter.ReturnHome(Data != null ? Data.toolReturnSeconds : 0.6f); // bolts never fall
         }
 
         private bool IsSeatedInHole(BoltRuntime rt) => rt.Hole != null && Set != null && Set.Get(rt.Hole).IsSeated;

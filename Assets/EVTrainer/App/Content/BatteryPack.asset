@@ -273,6 +273,8 @@ MonoBehaviour:
     wrenchAttachMaxTiltDegrees: 45
     wrenchDetachOffPlaneMetres: 0.15
     ratchetClickDegrees: 6
+    toolFloatMaxDistanceMetres: 1
+    toolReturnSeconds: 0.6
     boltName: Cover bolt
     boltHint: Let go upright over a hole, then twist it clockwise
     wrenchName: Torque wrench

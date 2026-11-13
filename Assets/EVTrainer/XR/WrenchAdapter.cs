@@ -10,8 +10,9 @@ namespace EVTrainer.XR
     /// <summary>
     /// XRI side of the torque wrench. Measures only: where the holding hand is and where the socket mouth is.
     /// Once attached to a bolt, XRI stops moving it (no position/rotation tracking, no Rigidbody interpolation)
-    /// and the pose set by the App is the only thing that places it, re-applied every frame up to rendering.
-    /// The trainee can hold the handle anywhere (dynamic attach).
+    /// and the pose set by the App is the only thing that places it, re-applied every frame up to rendering, also
+    /// while it is parked on the bolt (let go). The trainee can hold the handle anywhere (dynamic attach).
+    /// It never falls: kinematic without gravity whenever it is not held.
     /// </summary>
     [RequireComponent(typeof(XRGrabInteractable))]
     public sealed class WrenchAdapter : MonoBehaviour
@@ -26,7 +27,11 @@ namespace EVTrainer.XR
         private Vector3 _drivenPosition;
         private Quaternion _drivenRotation;
         private RigidbodyInterpolation _interpolation;
+        private ToolHome _home;
 
+        public event Action<WrenchAdapter> Grabbed;
+
+        /// <summary>Let go. The App decides what happens (park on the bolt, float, or return to the stand); it never falls.</summary>
         public event Action<WrenchAdapter> Released;
 
         public bool IsHeld => _interactor != null;
@@ -50,7 +55,21 @@ namespace EVTrainer.XR
         {
             _grab = GetComponent<XRGrabInteractable>();
             _rigidbody = GetComponent<Rigidbody>();
+            _home = new ToolHome(this, _rigidbody);
+            _home.HoldStill(); // rests on its stand without physics
         }
+
+        /// <summary>Stays exactly where it is (kinematic, no gravity).</summary>
+        public void HoldStill() => _home.HoldStill();
+
+        /// <summary>Glides back to its place on the tool stand.</summary>
+        public void ReturnHome(float seconds)
+        {
+            SetAttached(false);
+            _home.Return(seconds);
+        }
+
+        public bool IsReturningHome => _home != null && _home.IsReturning;
 
         private void OnEnable()
         {
@@ -66,12 +85,18 @@ namespace EVTrainer.XR
             Application.onBeforeRender -= ApplyDrivenPose;
         }
 
-        private void OnSelectEntered(SelectEnterEventArgs args) => _interactor = args.interactorObject;
+        private void OnSelectEntered(SelectEnterEventArgs args)
+        {
+            _interactor = args.interactorObject;
+            _home.Cancel();
+            Grabbed?.Invoke(this);
+        }
 
         private void OnSelectExited(SelectExitEventArgs args)
         {
             _interactor = null;
-            SetAttached(false);
+            // XRI has restored the Rigidbody; hold still first so it never drops, then let the App decide.
+            _home.HoldStill();
             Released?.Invoke(this);
         }
 

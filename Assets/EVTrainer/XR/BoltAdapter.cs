@@ -10,7 +10,7 @@ namespace EVTrainer.XR
     /// <summary>
     /// XRI side of one hand-held bolt. Measures only: the "virtual" orientation the trainee's hand would give the bolt
     /// (interactor attach rotation x grab offset) so the App can derive twist about a hole axis and tilt from it.
-    /// Can pin the bolt to a pose (on the hole axis) while still held, lock it in place, or free it to physics.
+    /// Can pin the bolt to a pose (on the hole axis) while still held, lock it in place, or send it back to its tray slot. It never falls.
     /// </summary>
     [RequireComponent(typeof(XRGrabInteractable))]
     public sealed class BoltAdapter : MonoBehaviour
@@ -19,7 +19,6 @@ namespace EVTrainer.XR
         private Rigidbody _rigidbody;
         private IXRSelectInteractor _interactor;
         private Quaternion _gripOffset = Quaternion.identity;
-        private bool _lockedInPlace;
         private bool _initialised;
 
         public event Action<BoltAdapter> Grabbed;
@@ -44,7 +43,19 @@ namespace EVTrainer.XR
             _initialised = true;
             _grab = GetComponent<XRGrabInteractable>();
             _rigidbody = GetComponent<Rigidbody>();
+            _home = new ToolHome(this, _rigidbody); // its slot in the bolt tray
         }
+
+        private ToolHome _home;
+
+        /// <summary>Glides back to its slot in the bolt tray (a loose bolt never falls).</summary>
+        public void ReturnHome(float seconds)
+        {
+            EnsureInitialised();
+            _home.Return(seconds);
+        }
+
+        public bool IsReturningHome => _home != null && _home.IsReturning;
 
         private void OnEnable()
         {
@@ -62,6 +73,7 @@ namespace EVTrainer.XR
         private void OnSelectEntered(SelectEnterEventArgs args)
         {
             _interactor = args.interactorObject;
+            _home.Cancel();
             RecaptureGrip();
             Grabbed?.Invoke(this);
         }
@@ -70,8 +82,9 @@ namespace EVTrainer.XR
         {
             _interactor = null;
             SetTracking(true, true);
-            // XRI has just restored the Rigidbody; a bolt left in a hole stays put, anything else falls.
-            if (_rigidbody != null) _rigidbody.isKinematic = _lockedInPlace;
+            // XRI has just restored the Rigidbody. Bolts never fall: hold still; the App then leaves it in its hole or
+            // sends it back to the tray.
+            _home.HoldStill();
             Released?.Invoke(this);
         }
 
@@ -102,22 +115,11 @@ namespace EVTrainer.XR
 
         public void SetPosition(Vector3 position) => SetPose(position, transform.rotation);
 
-        /// <summary>True: the bolt stays exactly where it is when let go (in a hole). False: normal physics.</summary>
+        /// <summary>True: the bolt sits in a hole and stays exactly where it is when let go (held still now if free).</summary>
         public void SetLockedInPlace(bool locked)
         {
-            _lockedInPlace = locked;
-            if (_rigidbody == null || IsHeld) return;
-            if (!locked && !_rigidbody.isKinematic) return;
-            if (locked)
-            {
-                if (!_rigidbody.isKinematic)
-                {
-                    _rigidbody.linearVelocity = Vector3.zero;
-                    _rigidbody.angularVelocity = Vector3.zero;
-                }
-                _rigidbody.isKinematic = true;
-            }
-            else _rigidbody.isKinematic = false;
+            EnsureInitialised();
+            if (locked && !IsHeld) _home.HoldStill(); // never falls either way; unlocked bolts go back to the tray on release
         }
 
         public void SetGrabbable(bool grabbable)
