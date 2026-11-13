@@ -26,12 +26,23 @@ namespace EVTrainer.XR
         [Header("Select (grab) thresholds on max(pinch, grip)")]
         [SerializeField, Range(0f, 1f)] private float _selectPress = 0.8f;
         [SerializeField, Range(0f, 1f)] private float _selectRelease = 0.5f;
+        [Tooltip("A grab only ends after the hand has stayed open this long (stops flicker re-grabs).")]
+        [SerializeField, Range(0f, 0.5f)] private float _releaseHoldSeconds = 0.1f;
+        [Header("Grab pose smoothing (hands only; controllers stay 1:1) - One Euro filter")]
+        [SerializeField, Min(0.01f)] private float _positionMinCutoffHz = 1.5f;
+        [SerializeField, Min(0f)] private float _positionBeta = 4f;
+        [SerializeField, Min(0.01f)] private float _rotationMinCutoffHz = 1.5f;
+        [SerializeField, Min(0f)] private float _rotationBeta = 0.6f;
 
         private static readonly List<XRHandSubsystem> s_Subsystems = new List<XRHandSubsystem>();
 
         private readonly System.Numerics.Vector3[] _joints = new System.Numerics.Vector3[HandSkeleton.JointCount];
         private XRHandSubsystem _subsystem;
         private ButtonHysteresis _select;
+        private ReleaseDebounce _debounce;
+        private OneEuroPoseFilter _filter;
+        private bool _grabbing;           // debounced select state
+        private bool _grabAtPinch;        // grab point chosen when the grab started (pinch point or palm), kept while held
         private HandGestureSettings _settings;
         private float _selectValue;
         private int _pressedFrame = -1;
@@ -51,6 +62,9 @@ namespace EVTrainer.XR
         {
             _settings = new HandGestureSettings(_pinchClosed, _pinchOpen, _curlClosed, _curlOpen);
             _select = new ButtonHysteresis(_selectPress, _selectRelease);
+            _debounce = new ReleaseDebounce(_releaseHoldSeconds);
+            _filter = new OneEuroPoseFilter(new OneEuroSettings(_positionMinCutoffHz, _positionBeta),
+                new OneEuroSettings(_rotationMinCutoffHz, _rotationBeta));
         }
 
         private void OnDisable() => SetUntracked();
@@ -68,12 +82,18 @@ namespace EVTrainer.XR
 
             _selectValue = Mathf.Max(pinch, grip);
             _select.Update(_selectValue);
-            TrackEdges();
+            bool wasGrabbing = _grabbing;
+            _grabbing = _debounce.Update(_select.IsPressed, Time.timeAsDouble);
+            if (_grabbing && !wasGrabbing) { _pressedFrame = Time.frameCount; _grabAtPinch = pinch >= grip; }
+            if (!_grabbing && wasGrabbing) _releasedFrame = Time.frameCount;
 
-            // Grab point: between thumb and index tips when pinching, otherwise the palm.
+            // Grab point: between thumb and index tips when pinching, otherwise the palm. While a grab lasts the choice is
+            // kept (switching mid-grab would jump the held part by centimetres), then the pose is One Euro filtered.
             var pinchPoint = (J(HandJoint.ThumbTip) + J(HandJoint.IndexTip)) * 0.5f;
-            var grabPoint = pinch >= grip ? pinchPoint : J(HandJoint.Palm);
-            transform.SetPositionAndRotation(grabPoint.ToUnity(), palmPose.rotation);
+            bool atPinch = _grabbing ? _grabAtPinch : pinch >= grip;
+            var grabPoint = atPinch ? pinchPoint : J(HandJoint.Palm);
+            _filter.Update(grabPoint, palmPose.rotation.ToNumerics(), Time.deltaTime);
+            transform.SetPositionAndRotation(_filter.Position.ToUnity(), _filter.Rotation.ToUnity());
 
             Current = new InputFrame(InputSource.Hand, grip, 0f, pinch,
                 new PartPose(palmPose.position.ToNumerics(), palmPose.rotation.ToNumerics()), isTracked: true);
@@ -127,24 +147,18 @@ namespace EVTrainer.XR
 
         private void SetUntracked()
         {
-            if (_select != null && _select.IsPressed)
-            {
-                _select.Reset();
-                TrackEdges();
-            }
+            if (_select != null) _select.Reset();
+            _debounce?.Reset();
+            _filter?.Reset();
+            if (_grabbing) _releasedFrame = Time.frameCount; // tracking lost: let go now
+            _grabbing = false;
             _selectValue = 0f;
             Current = Untracked;
         }
 
-        private void TrackEdges()
-        {
-            if (_select.WasPressedThisUpdate) _pressedFrame = Time.frameCount;
-            if (_select.WasReleasedThisUpdate) _releasedFrame = Time.frameCount;
-        }
-
         // ---- IXRInputButtonReader: lets XRI use this hand's pinch/grip as the interactor's select input ----
 
-        public bool ReadIsPerformed() => _select != null && _select.IsPressed;
+        public bool ReadIsPerformed() => _grabbing;
         public bool ReadWasPerformedThisFrame() => _pressedFrame == Time.frameCount;
         public bool ReadWasCompletedThisFrame() => _releasedFrame == Time.frameCount;
         public float ReadValue() => _selectValue;

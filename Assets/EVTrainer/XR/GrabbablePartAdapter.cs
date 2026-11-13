@@ -137,6 +137,24 @@ namespace EVTrainer.XR
         public event Action<GrabbablePartAdapter> SecondHandNeeded;
 
         private bool _lifted;
+        private readonly TwoHandCarry _carry = new TwoHandCarry();
+
+        private System.Numerics.Vector3 HandPoint(int i) =>
+            _grab.interactorsSelecting[i].GetAttachTransform(_grab).position.ToNumerics();
+
+        private void Update()
+        {
+            if (!RequiresTwoHands || !_lifted || _grab.interactorsSelecting.Count < 2 || IsLocked) return;
+            _carry.Pose(HandPoint(0), HandPoint(1), out var position, out float yaw);
+            var p = position.ToUnity();
+            var r = Quaternion.Euler(0f, yaw, 0f); // level: no pitch or roll from hand noise
+            transform.SetPositionAndRotation(p, r);
+            if (_rigidbody != null)
+            {
+                _rigidbody.position = p;
+                _rigidbody.rotation = r;
+            }
+        }
 
         private void SetTracking(bool track)
         {
@@ -152,8 +170,10 @@ namespace EVTrainer.XR
 
             if (_grab.interactorsSelecting.Count >= 2)
             {
+                // Two-hand carry: our script poses it (midpoint, yaw from the hands, kept level); XRI does not move it.
                 _lifted = true;
-                SetTracking(true);
+                SetTracking(false);
+                _carry.Begin(transform.position.ToNumerics(), transform.eulerAngles.y, HandPoint(0), HandPoint(1));
             }
             else
             {
