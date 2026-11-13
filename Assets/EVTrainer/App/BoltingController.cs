@@ -440,6 +440,28 @@ namespace EVTrainer.App
             if (_wrenchHole != null && Set != null) _swing = new RatchetSwing(Set.Spec.Wrench);
         }
 
+        /// <summary>The bolt standing in a hole, or null.</summary>
+        public BoltAdapter BoltInHole(string hole)
+        {
+            foreach (var rt in _runtimes) if (rt.Hole == hole) return rt.Adapter;
+            return null;
+        }
+
+        /// <summary>
+        /// Review (exploded view / disassembly) on or off: the wrench comes off any bolt (back to its stand unless held)
+        /// and cannot be picked up while the assembly is apart.
+        /// </summary>
+        public void SetReviewing(bool reviewing)
+        {
+            if (_wrench == null) return;
+            if (reviewing && _wrenchHole != null)
+            {
+                Detach();
+                if (!_wrench.IsHeld) _wrench.ReturnHome(Data != null ? Data.toolReturnSeconds : 0.6f);
+            }
+            _wrench.SetGrabbable(!reviewing && _training != null && _training.IsRunning);
+        }
+
         /// <summary>One debug-panel line: wrench state, attached bolt, handle angle, torque.</summary>
         public string DescribeWrench()
         {

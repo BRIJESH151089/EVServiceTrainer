@@ -18,6 +18,10 @@ MonoBehaviour:
   _learnCaptureDegrees: 25
   _testCaptureMetres: 0.03
   _testCaptureDegrees: 15
+  _explodeMoveSeconds: 0.9
+  _explodeStaggerSeconds: 0.12
+  _disassemblyStepSeconds: 1.2
+  _disassemblyPauseSeconds: 1
   _parts:
   - id: pack_tray
     typeId: 
@@ -34,6 +38,7 @@ MonoBehaviour:
     requiresTwoHands: 0
     preInstalled: 1
     prerequisites: []
+    explodeOffset: {x: 0, y: 0, z: 0}
   - id: cooling_plate
     typeId: 
     displayName: Cooling plate
@@ -50,6 +55,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - pack_tray
+    explodeOffset: {x: -0.62, y: 0.05, z: 0}
   - id: module_1
     typeId: battery_module
     displayName: Battery module 1
@@ -66,6 +72,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - cooling_plate
+    explodeOffset: {x: -0.6515, y: 0.14, z: 0}
   - id: module_2
     typeId: battery_module
     displayName: Battery module 2
@@ -82,6 +89,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - cooling_plate
+    explodeOffset: {x: -0.6305, y: 0.14, z: 0}
   - id: module_3
     typeId: battery_module
     displayName: Battery module 3
@@ -98,6 +106,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - cooling_plate
+    explodeOffset: {x: -0.6095, y: 0.14, z: 0}
   - id: module_4
     typeId: battery_module
     displayName: Battery module 4
@@ -114,6 +123,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - cooling_plate
+    explodeOffset: {x: -0.5885, y: 0.14, z: 0}
   - id: busbar_1
     typeId: busbar
     displayName: Busbar 1
@@ -131,6 +141,7 @@ MonoBehaviour:
     prerequisites:
     - module_1
     - module_2
+    explodeOffset: {x: -0.62, y: 0.24, z: -0.04}
   - id: busbar_2
     typeId: busbar
     displayName: Busbar 2
@@ -148,6 +159,7 @@ MonoBehaviour:
     prerequisites:
     - module_2
     - module_3
+    explodeOffset: {x: -0.62, y: 0.24, z: -0.04}
   - id: busbar_3
     typeId: busbar
     displayName: Busbar 3
@@ -165,6 +177,7 @@ MonoBehaviour:
     prerequisites:
     - module_3
     - module_4
+    explodeOffset: {x: -0.62, y: 0.24, z: -0.04}
   - id: bms
     typeId: 
     displayName: BMS board
@@ -183,6 +196,7 @@ MonoBehaviour:
     - busbar_1
     - busbar_2
     - busbar_3
+    explodeOffset: {x: -0.62, y: 0.32, z: 0}
   - id: hv_connector
     typeId: 
     displayName: HV connector
@@ -199,6 +213,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - bms
+    explodeOffset: {x: -0.62, y: 0.4, z: -0.05}
   - id: cover
     typeId: 
     displayName: Pack cover
@@ -215,6 +230,7 @@ MonoBehaviour:
     preInstalled: 0
     prerequisites:
     - hv_connector
+    explodeOffset: {x: 0.7, y: 0.06, z: -0.12}
   _boltSets:
   - id: cover_bolts
     prerequisitePartId: cover
@@ -280,3 +296,4 @@ MonoBehaviour:
     boltHint: Let go upright over a hole, then twist it clockwise
     wrenchName: Torque wrench
     wrenchHint: "Fit on a seated bolt, swing clockwise to 8 N\xB7m"
+    explodeLiftMetres: 0.06

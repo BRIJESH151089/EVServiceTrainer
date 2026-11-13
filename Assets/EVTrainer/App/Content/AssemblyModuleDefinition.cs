@@ -43,6 +43,8 @@ namespace EVTrainer.App
             public bool preInstalled;
             [Tooltip("Ids of parts that must be installed first.")]
             public string[] prerequisites = Array.Empty<string>();
+            [Tooltip("Exploded view: where the installed part moves to, relative to its target pose, in assembly-origin axes (metres).")]
+            public Vector3 explodeOffset;
         }
 
         /// <summary>One threaded hole, relative to the part the bolt set fastens (its installed target pose).</summary>
@@ -111,6 +113,9 @@ namespace EVTrainer.App
             public string boltHint;
             public string wrenchName = "Torque wrench";
             public string wrenchHint;
+            [Header("Exploded view")]
+            [Tooltip("Bolts float this far out of their holes (along the bolt axis) above the fastened part's exploded position.")]
+            [Min(0f)] public float explodeLiftMetres = 0.08f;
         }
 
         [SerializeField] private string _id = "module";
@@ -120,6 +125,15 @@ namespace EVTrainer.App
         [SerializeField, Range(0f, 90f)] private float _learnCaptureDegrees = 25f;
         [SerializeField, Min(0f)] private float _testCaptureMetres = 0.03f;
         [SerializeField, Range(0f, 90f)] private float _testCaptureDegrees = 15f;
+        [Header("Exploded view and disassembly review (after the module is complete)")]
+        [Tooltip("Exploded view: seconds for one layer to move out or back.")]
+        [SerializeField, Min(0.05f)] private float _explodeMoveSeconds = 0.9f;
+        [Tooltip("Exploded view: delay between layers (bolts first out, plate first back).")]
+        [SerializeField, Min(0f)] private float _explodeStaggerSeconds = 0.12f;
+        [Tooltip("Disassembly review: seconds for one step's parts to come off.")]
+        [SerializeField, Min(0.05f)] private float _disassemblyStepSeconds = 1.2f;
+        [Tooltip("Disassembly review: hold after each step so its name can be read.")]
+        [SerializeField, Min(0f)] private float _disassemblyPauseSeconds = 1f;
         [SerializeField] private List<PartEntry> _parts = new List<PartEntry>();
         [SerializeField] private List<BoltSetEntry> _boltSets = new List<BoltSetEntry>();
 
@@ -127,6 +141,23 @@ namespace EVTrainer.App
         public string Title => _title;
         public IReadOnlyList<PartEntry> Parts => _parts;
         public IReadOnlyList<BoltSetEntry> BoltSets => _boltSets;
+
+        public ExplodeTiming ExplodeTiming =>
+            new ExplodeTiming(_explodeMoveSeconds, _explodeStaggerSeconds, _disassemblyStepSeconds, _disassemblyPauseSeconds);
+
+        /// <summary>Exploded-view offset of a slot in world space (rotated by the assembly origin), or zero.</summary>
+        public Vector3 ExplodeOffset(string partId, Transform origin)
+        {
+            foreach (var p in _parts)
+                if (p.id == partId) return origin.rotation * p.explodeOffset;
+            return Vector3.zero;
+        }
+
+        public BoltSetEntry BoltSet(string id)
+        {
+            foreach (var s in _boltSets) if (s.id == id) return s;
+            return null;
+        }
 
         /// <summary>Builds the Core definition with target poses in world space, placed by <paramref name="origin"/>.</summary>
         public AssemblyDefinition ToCore(Transform origin)

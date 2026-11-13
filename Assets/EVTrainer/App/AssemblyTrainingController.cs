@@ -160,6 +160,18 @@ namespace EVTrainer.App
             CheckCompleted();
         }
 
+        /// <summary>The scene's physical parts (one per slot).</summary>
+        public IReadOnlyList<GrabbablePartAdapter> Parts => _parts;
+
+        /// <summary>A short line on the info panel (e.g. the review step), until the next result.</summary>
+        public void ShowNotice(string text)
+        {
+            if (_hud != null && _hud.isActiveAndEnabled) _hud.ShowNotice(text, warning: false);
+        }
+
+        /// <summary>Puts the info panel back to the current progress and result.</summary>
+        public void RestoreHud() => RefreshHud();
+
         /// <summary>Raised once per run when the last step of the module is done.</summary>
         public event System.Action Completed;
 
