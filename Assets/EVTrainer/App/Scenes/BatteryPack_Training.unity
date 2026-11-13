@@ -2461,6 +2461,7 @@ GameObject:
   - component: {fileID: 708385751}
   - component: {fileID: 708385750}
   - component: {fileID: 708385749}
+  - component: {fileID: 708385752}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2635,6 +2636,22 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &708385752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708385747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adecae3fef7e534a8f1944a952b1151, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.ScreenFader
+  _material: {fileID: 2100000, guid: 8994c9c0d53991c4f82ef1d216002eed, type: 2}
+  _seconds: 0.3
+  _fadeInOnStart: 1
+  _distance: 0.15
 --- !u!1001 &741083032
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7637,6 +7654,7 @@ MonoBehaviour:
   _labelScale: 0.7
   _bolting: {fileID: 1991837944}
   _restartButton: {fileID: 357245425}
+  _fader: {fileID: 708385752}
   _debugPanel: {fileID: 447656227}
   _debugToggle: {fileID: 1991837941}
   _interactorStatus: {fileID: 1991837943}

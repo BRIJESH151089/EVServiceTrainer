@@ -56,6 +56,8 @@ namespace EVTrainer.App
         [SerializeField] private BoltingController _bolting;
         [Tooltip("Physical Restart push button (within reach). Back to mode selection with all parts staged.")]
         [SerializeField] private PushButtonView _restartButton;
+        [Tooltip("Comfort fade on the headset camera (fade out before the reload; the new scene fades in).")]
+        [SerializeField] private ScreenFader _fader;
 
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
@@ -236,9 +238,16 @@ namespace EVTrainer.App
         /// <summary>Restart: reload the scene, which brings back the mode selection with every part on its rack.</summary>
         private void OnRestartRequested()
         {
+            if (_restarting) return;
+            _restarting = true;
             Debug.Log("[EVTrainer] Restart pressed: reloading the scene.");
-            UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.name);
+            // Fade to black first; the reloaded scene fades back in, so the view never jumps.
+            string scene = gameObject.scene.name;
+            if (_fader != null) _fader.FadeOutThen(() => UnityEngine.SceneManagement.SceneManager.LoadScene(scene));
+            else UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
         }
+
+        private bool _restarting;
 
         private void RefreshHud()
         {
