@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace EVTrainer.UI
 {
-    /// <summary>Learn mode: a pattern number floating above a bolt (1–8), turned toward the viewer; the next one highlighted.</summary>
+    /// <summary>Learn mode: a pattern number floating above a bolt (1–8), turned smoothly toward the viewer; the next one highlighted.</summary>
     public sealed class FloatingNumberView : MonoBehaviour
     {
         [SerializeField] private TMP_Text _text;
@@ -14,8 +14,13 @@ namespace EVTrainer.UI
 
         public enum Look { Normal, Next, Done, Fault }
 
-        private Transform _viewer;
         private Look _look = (Look)(-1);
+
+        private void Awake()
+        {
+            // Faces the viewer smoothly, yaw only, late in the frame (no jitter).
+            if (GetComponent<YawBillboard>() == null) gameObject.AddComponent<YawBillboard>();
+        }
 
         public void Show(int number, Vector3 position, Look look)
         {
@@ -27,13 +32,6 @@ namespace EVTrainer.UI
                 _text.text = look == Look.Next ? $"<b>{number}</b>" : number.ToString();
                 _text.color = look == Look.Next ? _next : look == Look.Done ? _done : look == Look.Fault ? _fault : _normal;
                 transform.localScale = Vector3.one * (look == Look.Next ? 1.35f : 1f);
-            }
-            if (_viewer == null && Camera.main != null) _viewer = Camera.main.transform;
-            if (_viewer != null)
-            {
-                var away = transform.position - _viewer.position; // text front faces -Z: look away from the viewer
-                away.y = 0f;
-                if (away.sqrMagnitude > 1e-6f) transform.rotation = Quaternion.LookRotation(away, Vector3.up);
             }
         }
 
