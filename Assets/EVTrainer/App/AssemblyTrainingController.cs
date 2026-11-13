@@ -67,6 +67,8 @@ namespace EVTrainer.App
         [SerializeField] private HandTrackingAdapter _rightHand;
         [SerializeField] private HandJointVisual _leftHandVisual;
         [SerializeField] private HandJointVisual _rightHandVisual;
+        [Tooltip("Debug: draw the tracked joints as spheres (the skinned hand meshes are the normal visual).")]
+        [SerializeField] private bool _showJointDebug;
         [SerializeField, Min(1f)] private float _panelRefreshHz = 15f;
 
         private readonly List<string> _ghostSlots = new List<string>();
@@ -478,10 +480,10 @@ namespace EVTrainer.App
             return _interactorStatus != null ? head + "\n" + _interactorStatus.Describe() : head;
         }
 
-        private static void RenderHand(HandTrackingAdapter hand, HandJointVisual visual)
+        private void RenderHand(HandTrackingAdapter hand, HandJointVisual visual)
         {
             if (visual == null) return;
-            bool tracked = hand != null && hand.isActiveAndEnabled && hand.Current.IsTracked;
+            bool tracked = _showJointDebug && hand != null && hand.isActiveAndEnabled && hand.Current.IsTracked;
             visual.Render(tracked ? hand.JointPositions : null, tracked);
         }
 

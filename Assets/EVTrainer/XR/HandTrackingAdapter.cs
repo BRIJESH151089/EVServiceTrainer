@@ -53,6 +53,12 @@ namespace EVTrainer.XR
         /// <summary>Latest input frame for this hand. Untracked when the hand is not tracked.</summary>
         public InputFrame Current { get; private set; } = Untracked;
 
+        /// <summary>True while this hand holds a grab (debounced).</summary>
+        public bool IsGrabbing => _grabbing;
+
+        /// <summary>Smoothed minus raw grab point (world): the hand mesh is shifted by this while holding, so it moves with the part.</summary>
+        public Vector3 GrabSmoothingOffset { get; private set; }
+
         /// <summary>World-space joint positions indexed by <see cref="HandJoint"/>. Valid only while tracked.</summary>
         public IReadOnlyList<System.Numerics.Vector3> JointPositions => _joints;
 
@@ -94,6 +100,7 @@ namespace EVTrainer.XR
             var grabPoint = atPinch ? pinchPoint : J(HandJoint.Palm);
             _filter.Update(grabPoint, palmPose.rotation.ToNumerics(), Time.deltaTime);
             transform.SetPositionAndRotation(_filter.Position.ToUnity(), _filter.Rotation.ToUnity());
+            GrabSmoothingOffset = (_filter.Position - grabPoint).ToUnity();
 
             Current = new InputFrame(InputSource.Hand, grip, 0f, pinch,
                 new PartPose(palmPose.position.ToNumerics(), palmPose.rotation.ToNumerics()), isTracked: true);
