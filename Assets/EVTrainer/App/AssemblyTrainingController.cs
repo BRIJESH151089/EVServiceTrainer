@@ -22,6 +22,10 @@ namespace EVTrainer.App
         [SerializeField] private GrabbablePartAdapter[] _parts;
         [SerializeField] private GhostPresenter _ghosts;
 
+        [Header("Feedback")]
+        [Tooltip("Self-made sound set: workshop sounds at the source (3D), interface sounds 2D.")]
+        [SerializeField] private FeedbackAudio _audio;
+
         [Header("Snap")]
         [SerializeField, Min(0f)] private float _snapSeconds = 0.15f;
         [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.6f;
@@ -148,6 +152,26 @@ namespace EVTrainer.App
         {
             RefreshHud();
             _nextPanelRefresh = 0f;
+            CheckCompleted();
+        }
+
+        /// <summary>Raised once per run when the last step of the module is done.</summary>
+        public event System.Action Completed;
+
+        public bool IsCompleted { get; private set; }
+
+        /// <summary>Plays a feedback sound (no-op without an audio player in the scene).</summary>
+        public void PlaySound(FeedbackCue cue, Vector3 position)
+        {
+            if (_audio != null) _audio.Play(cue, position);
+        }
+
+        private void CheckCompleted()
+        {
+            if (!IsRunning || IsCompleted || !Progress.IsComplete) return;
+            IsCompleted = true;
+            PlaySound(FeedbackCue.ModuleComplete, transform.position);
+            Completed?.Invoke();
         }
 
         /// <summary>Status line from another run-time part (e.g. a bolt event), also shown on the debug panel.</summary>
@@ -228,6 +252,7 @@ namespace EVTrainer.App
             foreach (var part in _parts)
             {
                 part.Released += OnPartReleased;
+                part.Grabbed += OnPartGrabbed;
                 part.SecondHandNeeded += OnSecondHandNeeded;
             }
             if (_startPanel != null) _startPanel.ModeChosen += OnModeChosen;
@@ -239,11 +264,14 @@ namespace EVTrainer.App
             foreach (var part in _parts)
             {
                 part.Released -= OnPartReleased;
+                part.Grabbed -= OnPartGrabbed;
                 part.SecondHandNeeded -= OnSecondHandNeeded;
             }
             if (_startPanel != null) _startPanel.ModeChosen -= OnModeChosen;
             if (_restartButton != null) _restartButton.Clicked -= OnRestartRequested;
         }
+
+        private void OnPartGrabbed(GrabbablePartAdapter part) => PlaySound(FeedbackCue.PickUp, part.transform.position);
 
         private void OnSecondHandNeeded(GrabbablePartAdapter part)
         {
@@ -261,6 +289,7 @@ namespace EVTrainer.App
             if (slot != null && SettleRetryRule.IsEligible(preview, slot, release.Pose, _settleMaxHeightMetres))
             {
                 StartCoroutine(RetryWhenSettled(part, release));
+                PlaySound(FeedbackCue.CheckingFit, part.transform.position);
                 if (_hud != null) _hud.ShowNotice("Checking fit…", warning: false);
                 _lastInstallText = $"Checking fit… ({release.ItemId})";
                 _nextPanelRefresh = 0f;
@@ -305,6 +334,7 @@ namespace EVTrainer.App
             {
                 part.LockAt(result.SnapPose, _snapSeconds);
                 part.PulseReleasingController(_hapticAmplitude, _hapticSeconds);
+                PlaySound(FeedbackCue.Snap, result.SnapPose.Position.ToUnity());
                 var feedback = part.GetComponent<SnapFeedback>();
                 if (feedback != null) feedback.PlayInstalled();
                 RefreshGhosts();
@@ -312,8 +342,14 @@ namespace EVTrainer.App
             else if (result.Outcome == InstallOutcome.WrongOrder)
             {
                 // Not allowed yet: the part goes back where it came from, with a strong buzz.
+                PlaySound(FeedbackCue.Reject, part.transform.position);
                 part.ReturnToStaging(_returnSeconds);
                 part.PulseReleasingController(_rejectHapticAmplitude, _rejectHapticSeconds);
+            }
+            else if (result.Outcome == InstallOutcome.WrongOrientation && Progress.Mode == TrainingMode.Learn)
+            {
+                // Learn: turned the wrong way is pointed out (its ghost flashes red); Test leaves it loose, silently.
+                PlaySound(FeedbackCue.Reject, part.transform.position);
             }
             // Learn: a rejected release (wrong order, or turned the wrong way) flashes that slot's ghost red.
             if ((result.Outcome == InstallOutcome.WrongOrder || result.Outcome == InstallOutcome.WrongOrientation) && _ghosts != null)
@@ -321,6 +357,7 @@ namespace EVTrainer.App
 
             RefreshHud();
             _nextPanelRefresh = 0f; // show the result immediately
+            CheckCompleted();
         }
 
         private void Update()

@@ -81,6 +81,9 @@ namespace EVTrainer.XR
         /// (e.g. hand tracking lost) so a drop caused by tracking loss never installs a part.</summary>
         public event Action<GrabbablePartAdapter, PartRelease> Released;
 
+        /// <summary>Raised each time a hand or controller takes hold of the part.</summary>
+        public event Action<GrabbablePartAdapter> Grabbed;
+
         private bool _initialised;
 
         private void Awake() => EnsureInitialised();
@@ -166,6 +169,7 @@ namespace EVTrainer.XR
         {
             _lastInteractor = args.interactorObject;
             Refresh();
+            Grabbed?.Invoke(this);
             if (!RequiresTwoHands) return;
 
             if (_grab.interactorsSelecting.Count >= 2)

@@ -39,6 +39,8 @@ namespace EVTrainer.App
         [Tooltip("Height of the bolt head above the surface (the socket mouth attaches at its top). Attach and " +
                  "detach distances are module data (bolt set).")]
         [SerializeField, Min(0f)] private float _boltHeadHeightMetres = 0.007f;
+        [Tooltip("Hand-start: a thread tick (sound + light haptic) every this many degrees of bolt spin.")]
+        [SerializeField, Min(5f)] private float _threadTickDegrees = 45f;
         [Tooltip("A haptic tick every this many degrees of swing, stronger as torque rises toward spec.")]
         [SerializeField, Min(0.5f)] private float _hapticStepDegrees = 4f;
         [Tooltip("Let go below this height (the bench top), the wrench goes back to its stand instead of floating.")]
@@ -68,6 +70,7 @@ namespace EVTrainer.App
             public string Hole;
             public readonly AxisRotationTracker Tracker = new AxisRotationTracker();
             public float SpinDegrees;
+            public float ThreadTickDegrees; // bolt spin since the last thread tick
         }
 
         private readonly List<BoltRuntime> _runtimes = new List<BoltRuntime>();
@@ -87,9 +90,6 @@ namespace EVTrainer.App
         private string _wrenchHole;        // bolt the wrench is fitted on
         private string _refusedHole;       // last bolt the wrench was refused on (don't repeat the message while it stays there)
         private float _hapticAccumulator;
-        private AudioSource _audio;
-        private AudioClip _click;
-        private AudioClip _ratchetClick;
         private float _lastHandleAngle;
 
         private AssemblyProgress Progress => _training != null ? _training.Progress : null;
@@ -111,17 +111,6 @@ namespace EVTrainer.App
                 _wrenchTint = _wrench.GetComponent<PartTint>();
                 if (_wrenchTint == null) _wrenchTint = _wrench.gameObject.AddComponent<PartTint>();
             }
-
-            _audio = gameObject.AddComponent<AudioSource>();
-            _audio.playOnAwake = false;
-            _audio.spatialBlend = 1f;
-            const int rate = 44100;
-            var samples = ProceduralClick.CreateSamples(rate, 0.06f, 1800f, 120f);
-            _click = AudioClip.Create("TorqueClick", samples.Length, 1, rate, false);
-            _click.SetData(samples, 0);
-            var soft = ProceduralClick.CreateSamples(rate, 0.02f, 4200f, 260f);
-            _ratchetClick = AudioClip.Create("RatchetClick", soft.Length, 1, rate, false);
-            _ratchetClick.SetData(soft, 0);
         }
 
         private void OnEnable()
@@ -289,6 +278,7 @@ namespace EVTrainer.App
                 if (!check.Allowed)
                 {
                     _refusedHole = hole;
+                    _training.PlaySound(FeedbackCue.Reject, _wrench.SocketMouth);
                     _wrench.Pulse(0.8f, 0.15f);
                     _training.ShowStatus(Learn ? check.Reason : "Cannot torque this bolt yet.", good: false);
                     _training.NotifyProgressChanged(); // a logged mistake shows on the debug panel
@@ -337,8 +327,7 @@ namespace EVTrainer.App
             }
             if (step.BackClicks > 0)
             {
-                _audio.transform.position = headTop;
-                _audio.PlayOneShot(_ratchetClick, 0.25f);
+                _training.PlaySound(FeedbackCue.RatchetBack, headTop);
                 _wrench.Pulse(0.05f, 0.01f);
             }
             ShowGauge(set);
@@ -388,8 +377,7 @@ namespace EVTrainer.App
             _wrench.SetAttached(true);
             PoseAttachedWrench(holePos, axis);
             _wrench.Pulse(0.4f, 0.05f);
-            _audio.transform.position = holePos;
-            _audio.PlayOneShot(_click, 0.4f);
+            _training.PlaySound(FeedbackCue.WrenchAttach, holePos);
             var bolt = set.Get(hole);
             int n = set.Pattern.SequenceNumber(hole);
             if (Learn)
@@ -446,6 +434,7 @@ namespace EVTrainer.App
         private void OnWrenchGrabbed(WrenchAdapter wrench)
         {
             _wrenchRelease = null;
+            _training.PlaySound(FeedbackCue.PickUp, wrench.transform.position);
             if (_wrenchHole != null && Set != null) _swing = new RatchetSwing(Set.Spec.Wrench);
         }
 
@@ -508,8 +497,7 @@ namespace EVTrainer.App
             if (state == BoltState.Torqued)
             {
                 _wrench.Pulse(1f, set.AutoDetachWhenFinished ? 0.12f : 0.3f); // Test: a strong buzz says "stop and lift off"
-                _audio.transform.position = _wrench.SocketMouth;
-                _audio.PlayOneShot(_click, 1f);
+                _training.PlaySound(FeedbackCue.TorqueClick, _wrench.SocketMouth);
                 var next = set.NextInPattern;
                 string msg;
                 if (set.IsComplete) msg = "All bolts torqued.";
@@ -519,6 +507,7 @@ namespace EVTrainer.App
             }
             else if (state == BoltState.OverTorqued)
             {
+                _training.PlaySound(FeedbackCue.OverTorque, _wrench.SocketMouth);
                 _wrench.Pulse(1f, 0.4f);
                 _training.ShowStatus(Learn
                     ? $"Over-torqued: bolt {n} at {bolt.TorqueNm:0.0} N·m (max {bolt.Spec.MaxTorqueNm:0.0}). Stop at the click."
@@ -590,6 +579,12 @@ namespace EVTrainer.App
                     {
                         rt.SpinDegrees += twist * bolt.Spec.HandTurnGearing;
                         set.HandTurn(rt.Hole, twist, 0f, _training.RunTime);
+                        rt.ThreadTickDegrees += twist * bolt.Spec.HandTurnGearing;
+                        if (rt.ThreadTickDegrees >= _threadTickDegrees)
+                        {
+                            rt.ThreadTickDegrees = 0f;
+                            _training.PlaySound(FeedbackCue.BoltThreadTick, holePos);
+                        }
                     }
                     PlaceThreaded(rt, bolt, holePos, holeRot, axis);
                     if (bolt.State == BoltState.Seated) OnSeated(rt, set);
@@ -638,7 +633,8 @@ namespace EVTrainer.App
             }
             else
             {
-                // Sits crooked in the hole at the angle it was dropped.
+                // Sits crooked in the hole at the angle it was dropped: a jam.
+                _training.PlaySound(FeedbackCue.Reject, holePos);
                 var crooked = Quaternion.FromToRotation(axis, rt.Adapter.transform.up) * holeRot;
                 rt.Adapter.SetPose(holePos + axis * _engageHeightMetres, crooked);
                 _training.ShowStatus(Learn
@@ -674,6 +670,7 @@ namespace EVTrainer.App
 
         private void OnSeated(BoltRuntime rt, BoltSet set)
         {
+            _training.PlaySound(FeedbackCue.BoltSeated, rt.Adapter.transform.position);
             rt.Adapter.Pulse(0.5f, 0.08f);
             rt.Adapter.ForceRelease();
             rt.Adapter.SetGrabbable(false); // finger-tight: only the wrench works on it now
@@ -701,6 +698,7 @@ namespace EVTrainer.App
 
         private void OnBoltGrabbed(BoltAdapter adapter)
         {
+            _training.PlaySound(FeedbackCue.PickUp, adapter.transform.position);
             if (!_byAdapter.TryGetValue(adapter, out var rt) || rt.Hole == null) return;
             // Picking a started or jammed bolt up again: it stays in its hole; twisting continues from here.
             adapter.SetTracking(false, false);

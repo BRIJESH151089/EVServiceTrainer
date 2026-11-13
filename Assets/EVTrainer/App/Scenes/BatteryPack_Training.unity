@@ -240,9 +240,17 @@ PrefabInstance:
       value: Button Row
       objectReference: {fileID: 0}
     - target: {fileID: 5442894296405674875, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: _volume
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5442894296405674875, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
       propertyPath: _latching
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5442894296405674875, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: _outputGroup
+      value: 
+      objectReference: {fileID: -112139770227207185, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
     - target: {fileID: 5692160374477863632, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.8
@@ -292,9 +300,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7480645696981134979, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: _volume
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 7480645696981134979, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
       propertyPath: _latching
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7480645696981134979, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: _outputGroup
+      value: 
+      objectReference: {fileID: -112139770227207185, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
     - target: {fileID: 8125660360296637133, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.456
@@ -1170,6 +1186,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1068300766}
     m_Modifications:
+    - target: {fileID: 3565553728190369581, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: _volume
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3565553728190369581, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: _outputGroup
+      value: 
+      objectReference: {fileID: -112139770227207185, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
     - target: {fileID: 3724870903740152972, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
       propertyPath: m_Name
       value: Restart Button
@@ -4857,6 +4881,57 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7657191916052104052, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
   m_PrefabInstance: {fileID: 1250488002}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1291303159
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1291303161}
+  - component: {fileID: 1291303160}
+  m_Layer: 0
+  m_Name: Feedback Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1291303160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291303159}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8a5192157af6c549af5a0aae2addc81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.FeedbackAudio
+  _sfxGroup: {fileID: 8160963594704676298, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
+  _uiGroup: {fileID: -112139770227207185, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
+  _ambienceGroup: {fileID: -753929196087806932, guid: bf77ff0685c62554d8397e9904fa65cf, type: 2}
+  _voices: 6
+  _minDistance: 0.35
+  _maxDistance: 6
+  _playAmbience: 1
+--- !u!4 &1291303161
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291303159}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1299590316
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7176,6 +7251,7 @@ MonoBehaviour:
   - {fileID: 1901304083}
   - {fileID: 1446914588}
   _ghosts: {fileID: 2054863773}
+  _audio: {fileID: 1291303160}
   _snapSeconds: 0.25
   _hapticAmplitude: 0.6
   _hapticSeconds: 0.08
@@ -7309,6 +7385,7 @@ MonoBehaviour:
   _wrench: {fileID: 741083033}
   _gauge: {fileID: 741083034}
   _boltHeadHeightMetres: 0.007
+  _threadTickDegrees: 45
   _hapticStepDegrees: 4
   _minFloatHeightMetres: 0.92
   _ghostWrench: {fileID: 1420477056}
@@ -8631,3 +8708,4 @@ SceneRoots:
   - {fileID: 1100547653}
   - {fileID: 1736086469}
   - {fileID: 235863562}
+  - {fileID: 1291303161}

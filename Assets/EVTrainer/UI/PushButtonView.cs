@@ -31,7 +31,9 @@ namespace EVTrainer.UI
         [SerializeField, Min(0.01f)] private float _returnSeconds = 0.1f;
         [SerializeField, Range(0f, 1f)] private float _pressedBrightness = 0.75f;
         [SerializeField, Range(0f, 1f)] private float _disabledBrightness = 0.4f;
-        [SerializeField, Range(0f, 1f)] private float _volume = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float _volume = 0.8f;
+        [Tooltip("Mixer group for the click (UI). The click is 2D, like all interface sounds.")]
+        [SerializeField] private UnityEngine.Audio.AudioMixerGroup _outputGroup;
 
         private enum Look { Normal, Pressed, Latched, Disabled }
 
@@ -61,13 +63,12 @@ namespace EVTrainer.UI
 
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;
-            _audio.spatialBlend = 1f;
-            _audio.minDistance = 0.4f;
+            _audio.spatialBlend = 0f;
+            _audio.outputAudioMixerGroup = _outputGroup;
             if (s_Click == null)
             {
-                const int rate = 44100;
-                var samples = ProceduralClick.CreateSamples(rate, 0.04f, 3200f, 220f);
-                s_Click = AudioClip.Create("ButtonClick", samples.Length, 1, rate, false);
+                var samples = SoundSynth.Generate(FeedbackCue.UiPress);
+                s_Click = AudioClip.Create("UiPress", samples.Length, 1, SoundSynth.DefaultSampleRate, false);
                 s_Click.SetData(samples, 0);
             }
         }
