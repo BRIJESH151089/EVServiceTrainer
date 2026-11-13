@@ -45,9 +45,11 @@ namespace EVTrainer.App
         [SerializeField] private TrainingHudView _hud;
         [Tooltip("Learn / Test choice shown before each run. Without it the run starts in Learn mode.")]
         [SerializeField] private StartPanelView _startPanel;
-        [Tooltip("Learn mode: name + hint label above the part while it is held.")]
+        [Tooltip("Learn mode: template for the staged-part name labels (one per part group, the bolt tray and the wrench).")]
         [SerializeField] private PartLabelView _partLabel;
-        [SerializeField, Min(0f)] private float _labelGapMetres = 0.06f;
+        [SerializeField, Min(0f)] private float _labelGapMetres = 0.04f;
+        [Tooltip("Label size relative to the template.")]
+        [SerializeField, Range(0.2f, 2f)] private float _labelScale = 0.7f;
         [Tooltip("Bolt hand-start and torque wrench flow (optional; modules without bolts leave it empty).")]
         [SerializeField] private BoltingController _bolting;
         [Tooltip("Physical Restart push button (within reach). Back to mode selection with all parts staged.")]
@@ -315,7 +317,7 @@ namespace EVTrainer.App
             RenderHand(_rightHand, _rightHandVisual);
             UpdateHoverHighlights();
             UpdateHeldPreview();
-            UpdatePartLabel();
+            UpdatePartLabels();
 
             if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
             {
@@ -360,32 +362,64 @@ namespace EVTrainer.App
             if (_ghosts != null) _ghosts.SetReady(Progress.Mode == TrainingMode.Learn ? ready : null);
         }
 
-        /// <summary>Learn mode: label the part while it is held (never on hover; never in Test) with its name and hint.</summary>
-        private void UpdatePartLabel()
+        private readonly Dictionary<string, PartLabelView> _labels = new Dictionary<string, PartLabelView>();
+        private readonly List<string> _labelKeys = new List<string>();
+        private readonly List<string> _labelTexts = new List<string>();
+        private readonly List<System.Numerics.Vector3> _labelAnchors = new List<System.Numerics.Vector3>();
+        private readonly Dictionary<string, (int count, Vector3 sum, float top)> _groups = new Dictionary<string, (int, Vector3, float)>();
+        private float _nextLabelUpdate;
+
+        /// <summary>
+        /// Learn mode: a small name label over every group of staged parts ("Battery module ×4"), the bolt tray and the
+        /// wrench, so the trainee can identify them on the bench. A part leaves its group's label while held, moving or
+        /// installed; labels that would overlap from the trainee's view are lifted apart (Core <see cref="LabelLayout"/>).
+        /// Test mode: no labels.
+        /// </summary>
+        private void UpdatePartLabels()
         {
-            if (_partLabel == null) return;
-            GrabbablePartAdapter focus = null;
+            if (_partLabel == null || Time.unscaledTime < _nextLabelUpdate) return;
+            _nextLabelUpdate = Time.unscaledTime + 0.1f; // staged parts barely move: 10 Hz is plenty
+            _labelKeys.Clear();
+            _labelTexts.Clear();
+            _labelAnchors.Clear();
+
             if (IsRunning && Progress.Mode == TrainingMode.Learn)
             {
+                _groups.Clear();
                 foreach (var part in _parts)
-                    if (part.IsHeld && !part.IsLocked) { focus = part; break; }
+                {
+                    if (part.IsLocked || part.IsHeld || part.IsReturning) continue;
+                    var b = RendererBounds(part);
+                    _groups.TryGetValue(part.PartTypeId, out var g);
+                    _groups[part.PartTypeId] = (g.count + 1, g.sum + b.center, Mathf.Max(g.count == 0 ? float.MinValue : g.top, b.max.y));
+                }
+                foreach (var kv in _groups)
+                {
+                    var slots = _definition.SlotsOfType(kv.Key);
+                    if (slots.Count == 0) continue;
+                    var c = kv.Value.sum / kv.Value.count;
+                    _labelKeys.Add(kv.Key);
+                    _labelTexts.Add(LabelLayout.GroupText(slots[0].PartName, kv.Value.count));
+                    _labelAnchors.Add(new Vector3(c.x, kv.Value.top + _labelGapMetres, c.z).ToNumerics());
+                }
+                if (_bolting != null) _bolting.CollectStagedLabels(_labelKeys, _labelTexts, _labelAnchors);
             }
 
-            var slots = focus != null ? _definition.SlotsOfType(focus.PartTypeId) : null;
-            if (slots == null || slots.Count == 0)
+            var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
+            var placed = LabelLayout.Place(_labelAnchors, viewer.ToNumerics());
+            for (int i = 0; i < _labelKeys.Count; i++)
             {
-                // Bolts and the torque wrench (Learn only) label themselves through the bolting controller.
-                if (IsRunning && Progress.Mode == TrainingMode.Learn && _bolting != null &&
-                    _bolting.TryGetLabel(out string title, out string hint, out Vector3 at))
-                    _partLabel.Show(title, hint, at);
-                else
-                    _partLabel.Hide();
-                return;
+                if (!_labels.TryGetValue(_labelKeys[i], out var label))
+                {
+                    label = Instantiate(_partLabel, _partLabel.transform.parent);
+                    label.name = "Label " + _labelKeys[i];
+                    label.transform.localScale = _partLabel.transform.localScale * _labelScale;
+                    _labels[_labelKeys[i]] = label;
+                }
+                label.Show(_labelTexts[i], null, placed[i].ToUnity());
             }
-
-            var bounds = RendererBounds(focus);
-            var anchor = new Vector3(bounds.center.x, bounds.max.y + _labelGapMetres, bounds.center.z);
-            _partLabel.Show(slots[0].PartName, slots[0].Hint, anchor);
+            foreach (var kv in _labels)
+                if (!_labelKeys.Contains(kv.Key)) kv.Value.Hide();
         }
 
         private readonly Dictionary<GrabbablePartAdapter, Renderer[]> _renderers = new Dictionary<GrabbablePartAdapter, Renderer[]>();

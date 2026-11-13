@@ -10,12 +10,16 @@ namespace EVTrainer.UI
     public sealed class PartLabelView : MonoBehaviour
     {
         [SerializeField] private TMP_Text _text;
+        [Tooltip("Labels sit below eye level: tilt them back so they face up toward the viewer.")]
+        [SerializeField, Range(0f, 80f)] private float _tiltBackDegrees = 35f;
 
         private string _shown;
 
         private void Awake()
         {
-            if (GetComponent<YawBillboard>() == null) gameObject.AddComponent<YawBillboard>();
+            var billboard = GetComponent<YawBillboard>();
+            if (billboard == null) billboard = gameObject.AddComponent<YawBillboard>();
+            billboard.TiltBackDegrees = _tiltBackDegrees;
             if (_shown == null) Hide();
         }
 

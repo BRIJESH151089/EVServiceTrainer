@@ -13,6 +13,14 @@ namespace EVTrainer.UI
     {
         [SerializeField, Range(0f, 20f)] private float _deadZoneDegrees = 4f;
         [SerializeField, Range(0.02f, 1f)] private float _timeConstantSeconds = 0.18f;
+        [Tooltip("Fixed backward tilt so labels below eye level face up toward the viewer (not head-tracked: no jitter).")]
+        [SerializeField, Range(0f, 80f)] private float _tiltBackDegrees;
+
+        public float TiltBackDegrees
+        {
+            get => _tiltBackDegrees;
+            set => _tiltBackDegrees = value;
+        }
 
         private YawFollower _follower;
         private Transform _viewer;
@@ -37,7 +45,7 @@ namespace EVTrainer.UI
             if (away.sqrMagnitude < 1e-6f) return;
             float target = Mathf.Atan2(away.x, away.z) * Mathf.Rad2Deg;
             float yaw = snap ? Snap(target) : _follower.Update(target, Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            transform.rotation = Quaternion.Euler(_tiltBackDegrees, yaw, 0f);
         }
 
         private float Snap(float target)

@@ -742,27 +742,38 @@ namespace EVTrainer.App
 
         // ---------------- Labels (Learn) ----------------
 
-        /// <summary>Label for the held wrench or bolt (only while held), from the module data.</summary>
-        public bool TryGetLabel(out string title, out string hint, out Vector3 position)
+        /// <summary>
+        /// Learn labels for the bench: one for the loose bolts in the tray ("Cover bolts ×8") and one for the wrench
+        /// while it rests (not held, not on a bolt). Appends key, text and anchor for each.
+        /// </summary>
+        public void CollectStagedLabels(List<string> keys, List<string> texts, List<System.Numerics.Vector3> anchors)
         {
-            title = hint = null;
-            position = default;
             var data = Data;
-            if (data == null) return false;
-            if (_wrench != null && _wrench.IsHeld)
+            if (data == null) return;
+            int loose = 0;
+            var sum = Vector3.zero;
+            float top = float.MinValue;
+            foreach (var rt in _runtimes)
             {
-                title = data.wrenchName;
-                hint = data.wrenchHint;
-                position = _wrench.transform.position + Vector3.up * 0.08f;
-                return true;
+                if (rt.Hole != null || rt.Adapter.IsHeld || rt.Adapter.IsReturningHome) continue;
+                loose++;
+                sum += rt.Adapter.transform.position;
+                top = Mathf.Max(top, rt.Adapter.transform.position.y);
             }
-            BoltRuntime focus = null;
-            foreach (var rt in _runtimes) if (rt.Adapter.IsHeld) { focus = rt; break; }
-            if (focus == null) return false;
-            title = data.boltName;
-            hint = data.boltHint;
-            position = focus.Adapter.transform.position + Vector3.up * 0.06f;
-            return true;
+            if (loose > 0)
+            {
+                var c = sum / loose;
+                string name = LabelLayout.Capitalise(string.IsNullOrEmpty(data.groupName) ? "bolts" : data.groupName);
+                keys.Add("bolts");
+                texts.Add(LabelLayout.GroupText(name, loose));
+                anchors.Add(new Vector3(c.x, top + 0.05f, c.z).ToNumerics());
+            }
+            if (_wrench != null && !_wrench.IsHeld && _wrenchHole == null && !_wrench.IsReturningHome)
+            {
+                keys.Add("wrench");
+                texts.Add(data.wrenchName);
+                anchors.Add((_wrench.transform.position + _wrench.transform.forward * 0.15f + Vector3.up * 0.06f).ToNumerics()); // over the handle middle
+            }
         }
     }
 }
