@@ -13,15 +13,15 @@ namespace EVTrainer.Tests.EditMode
 
         private static float Rad(float degrees) => degrees * (float)Math.PI / 180f;
 
-        private static Vector3 ModulePos(int i) => new Vector3(-0.21f + Spacing * i, 0.06f, 0f);
-        private static Vector3 BusbarPos(int i) => new Vector3(-0.14f + Spacing * i, 0.116f, -0.08f);
-        private static readonly Vector3 PlatePos = new Vector3(0f, 0.016f, 0f);
+        internal static Vector3 ModulePos(int i) => new Vector3(-0.21f + Spacing * i, 0.06f, 0f);
+        internal static Vector3 BusbarPos(int i) => new Vector3(-0.14f + Spacing * i, 0.116f, -0.08f);
+        internal static readonly Vector3 PlatePos = new Vector3(0f, 0.016f, 0f);
         private static readonly Vector3 BmsPos = new Vector3(0f, 0.106f, 0.06f);
 
-        private static PartPose At(Vector3 p, float yawDegrees = 0f) =>
+        internal static PartPose At(Vector3 p, float yawDegrees = 0f) =>
             new PartPose(p, Quaternion.CreateFromAxisAngle(Vector3.UnitY, Rad(yawDegrees)));
 
-        private static AssemblyDefinition Pack()
+        internal static AssemblyDefinition Pack(SnapAssist snapAssist = null)
         {
             var parts = new List<PartSpec>
             {
@@ -39,7 +39,7 @@ namespace EVTrainer.Tests.EditMode
                     typeId: "busbar", groupName: "busbars", symmetry: PartSymmetry.HalfTurnAboutUp));
             parts.Add(new PartSpec("bms", "BMS board", At(BmsPos), 0.01f, 6f,
                 prerequisites: new[] { "busbar_1", "busbar_2", "busbar_3" }, groupName: "BMS board"));
-            return new AssemblyDefinition("battery_pack", "EV Battery Pack", parts);
+            return new AssemblyDefinition("battery_pack", "EV Battery Pack", parts, snapAssist: snapAssist);
         }
 
         private static AssemblyProgress NewProgress() => new AssemblyProgress(Pack(), TrainingMode.Learn);

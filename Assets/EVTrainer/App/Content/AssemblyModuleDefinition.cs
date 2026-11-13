@@ -97,6 +97,11 @@ namespace EVTrainer.App
 
         [SerializeField] private string _id = "module";
         [SerializeField] private string _title = "Module";
+        [Header("Snap assist (capture zone: released within it, a part or bolt is pulled into its exact pose)")]
+        [SerializeField, Min(0f)] private float _learnCaptureMetres = 0.05f;
+        [SerializeField, Range(0f, 90f)] private float _learnCaptureDegrees = 25f;
+        [SerializeField, Min(0f)] private float _testCaptureMetres = 0.03f;
+        [SerializeField, Range(0f, 90f)] private float _testCaptureDegrees = 15f;
         [SerializeField] private List<PartEntry> _parts = new List<PartEntry>();
         [SerializeField] private List<BoltSetEntry> _boltSets = new List<BoltSetEntry>();
 
@@ -149,7 +154,9 @@ namespace EVTrainer.App
                     new WrenchSpec(s.wrenchAttachRadiusMetres, s.wrenchAttachMaxAboveMetres, s.wrenchAttachMaxBelowMetres,
                         s.wrenchAttachMaxTiltDegrees, s.wrenchDetachOffPlaneMetres, s.ratchetClickDegrees)));
             }
-            return new AssemblyDefinition(_id, _title, specs, sets);
+            var snapAssist = new SnapAssist(new CaptureZone(_learnCaptureMetres, _learnCaptureDegrees),
+                new CaptureZone(_testCaptureMetres, _testCaptureDegrees));
+            return new AssemblyDefinition(_id, _title, specs, sets, snapAssist);
         }
     }
 }

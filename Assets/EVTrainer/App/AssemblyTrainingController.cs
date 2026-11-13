@@ -390,8 +390,8 @@ namespace EVTrainer.App
             float posTol = 0f, angTol = 0f;
             if (_lastEvaluation.HasValue && _definition.TryGetPart(_lastEvaluation.Value.PartId, out var slot))
             {
-                posTol = slot.PositionToleranceMetres;
-                angTol = slot.AngleToleranceDegrees;
+                posTol = SnapEvaluator.PositionTolerance(slot, Progress.CaptureZone);
+                angTol = SnapEvaluator.AngleTolerance(slot, Progress.CaptureZone);
             }
 
             _debugPanel.Render(new DebugPanelData(

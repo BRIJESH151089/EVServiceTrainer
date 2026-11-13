@@ -9,7 +9,13 @@ namespace EVTrainer.Core
         private const float RadToDeg = (float)(180.0 / Math.PI);
         private static readonly Quaternion HalfTurnAboutUp = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (float)Math.PI);
 
-        public static SnapEvaluation Evaluate(PartSpec spec, PartPose current)
+        public static SnapEvaluation Evaluate(PartSpec spec, PartPose current) => Evaluate(spec, current, CaptureZone.None);
+
+        /// <summary>
+        /// As <see cref="Evaluate(PartSpec, PartPose)"/>, but the accepted error is the larger of the part's own
+        /// tolerance and the snap-assist <paramref name="zone"/> (the part is then pulled into its exact pose).
+        /// </summary>
+        public static SnapEvaluation Evaluate(PartSpec spec, PartPose current, CaptureZone zone)
         {
             if (spec == null) throw new ArgumentNullException(nameof(spec));
 
@@ -19,9 +25,15 @@ namespace EVTrainer.Core
             return new SnapEvaluation(
                 positionError,
                 angleError,
-                positionError <= spec.PositionToleranceMetres,
-                angleError <= spec.AngleToleranceDegrees);
+                positionError <= PositionTolerance(spec, zone),
+                angleError <= AngleTolerance(spec, zone));
         }
+
+        /// <summary>Effective position tolerance: the part's own, widened to the capture zone.</summary>
+        public static float PositionTolerance(PartSpec spec, CaptureZone zone) => Math.Max(spec.PositionToleranceMetres, zone.PositionMetres);
+
+        /// <summary>Effective angle tolerance: the part's own, widened to the capture zone.</summary>
+        public static float AngleTolerance(PartSpec spec, CaptureZone zone) => Math.Max(spec.AngleToleranceDegrees, zone.AngleDegrees);
 
         /// <summary>
         /// The target rotation, or for a symmetric part whichever equivalent target rotation is closest to

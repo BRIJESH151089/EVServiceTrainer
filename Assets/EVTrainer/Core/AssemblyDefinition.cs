@@ -69,8 +69,10 @@ namespace EVTrainer.Core
         private readonly Dictionary<string, PartSpec> _partsById;
         private readonly Dictionary<string, List<PartSpec>> _slotsByType;
 
-        public AssemblyDefinition(string id, string title, IEnumerable<PartSpec> parts, IEnumerable<BoltSetSpec> boltSets = null)
+        public AssemblyDefinition(string id, string title, IEnumerable<PartSpec> parts, IEnumerable<BoltSetSpec> boltSets = null,
+            SnapAssist snapAssist = null)
         {
+            SnapAssist = snapAssist ?? SnapAssist.None;
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Assembly id is required.", nameof(id));
             if (parts == null) throw new ArgumentNullException(nameof(parts));
 
@@ -119,6 +121,9 @@ namespace EVTrainer.Core
 
         public string Id { get; }
         public string Title { get; }
+
+        /// <summary>Capture zones per mode for parts and bolts (magnetic snap assist).</summary>
+        public SnapAssist SnapAssist { get; }
 
         /// <summary>All slots in procedure order.</summary>
         public IReadOnlyList<PartSpec> Parts { get; }

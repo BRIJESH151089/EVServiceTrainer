@@ -66,6 +66,9 @@ namespace EVTrainer.Core
         public AssemblyDefinition Definition { get; }
         public TrainingMode Mode { get; }
 
+        /// <summary>Snap-assist capture zone of this run's mode (Learn is wider than Test).</summary>
+        public CaptureZone CaptureZone => Definition.SnapAssist.For(Mode);
+
         /// <summary>Installed slot ids in the order they were installed (pre-installed slots first).</summary>
         public IReadOnlyList<string> InstalledPartIds => _installOrder;
 
@@ -156,7 +159,8 @@ namespace EVTrainer.Core
         /// <summary>
         /// Judges a part of <paramref name="typeId"/> released at <paramref name="pose"/> without changing anything.
         /// The part is judged against the nearest free slot of its type (a slot within tolerance wins), then checks,
-        /// in order: prerequisites of that slot, position tolerance, angle tolerance (symmetry-aware).
+        /// in order: prerequisites of that slot, position tolerance, angle tolerance (symmetry-aware). Tolerances are
+        /// widened to the mode's <see cref="CaptureZone"/>; an install then snaps to the exact <see cref="InstallResult.SnapPose"/>.
         /// </summary>
         public InstallResult Evaluate(string typeId, PartPose pose)
         {
@@ -238,7 +242,7 @@ namespace EVTrainer.Core
             foreach (var slot in slots)
             {
                 if (_installed.Contains(slot.Id)) continue;
-                var e = SnapEvaluator.Evaluate(slot, pose);
+                var e = SnapEvaluator.Evaluate(slot, pose, CaptureZone);
                 bool fits = e.IsWithinTolerance;
                 if (best == null || (fits && !bestFits) || (fits == bestFits && e.PositionErrorMetres < evaluation.PositionErrorMetres))
                 {

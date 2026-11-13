@@ -167,6 +167,54 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 355082830138974016, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 355082830138974016, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 1886597803307507520, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1886597803307507520, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 1996982207555833339, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1996982207555833339, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 2363931108763813165, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2363931108763813165, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3508922555999830537, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3508922555999830537, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 3706733738785275059, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_fontSize
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3706733738785275059, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 4322810176610980669, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
       propertyPath: m_Name
       value: Start Panel
@@ -1504,6 +1552,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6707300672897493832, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: m_fontSize
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6707300672897493832, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2669,6 +2725,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6952190835499253937, guid: d1ec605e7f254ed429ccba81cd906005, type: 3}
+      propertyPath: m_fontSize
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 6952190835499253937, guid: d1ec605e7f254ed429ccba81cd906005, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 7924771560108839334, guid: d1ec605e7f254ed429ccba81cd906005, type: 3}
       propertyPath: m_Name
       value: Torque Wrench
@@ -3087,6 +3151,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 6707300672897493832, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: m_fontSize
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6707300672897493832, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 7379552058703026857, guid: 71fe8993e606e6740a94fa2029c88d27, type: 3}
       propertyPath: m_Name
       value: Restart Button
@@ -4644,6 +4716,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 4016330509507203864, guid: 0af62a431fcad864ca97a3242628f748, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 8315663885549816800, guid: 0af62a431fcad864ca97a3242628f748, type: 3}
+      propertyPath: m_AdditionalShaderChannelsFlag
+      value: 25
+      objectReference: {fileID: 0}
     - target: {fileID: 8607993705289780079, guid: 0af62a431fcad864ca97a3242628f748, type: 3}
       propertyPath: _viewer
       value: 
@@ -4859,6 +4939,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 3137561403567810802, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 3350600164359696158, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
@@ -4867,9 +4951,17 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 5730140207961143102, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 5934534863750009493, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6279826862321310442, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 6308323853971905449, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
       propertyPath: m_Layer
@@ -4878,6 +4970,10 @@ PrefabInstance:
     - target: {fileID: 6504516306212169663, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7115176068495139107, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
       objectReference: {fileID: 0}
     - target: {fileID: 7182367847459896679, guid: 81501342c9e421f4aa38e1fa341f8d2b, type: 3}
       propertyPath: m_Layer
@@ -7343,7 +7439,7 @@ MonoBehaviour:
   - {fileID: 1901304083}
   - {fileID: 1446914588}
   _ghosts: {fileID: 2054863773}
-  _snapSeconds: 0.15
+  _snapSeconds: 0.25
   _hapticAmplitude: 0.6
   _hapticSeconds: 0.08
   _returnSeconds: 0.5
@@ -7468,11 +7564,7 @@ MonoBehaviour:
   _pullOutMetres: 0.07
   _wrench: {fileID: 741083033}
   _gauge: {fileID: 741083034}
-  _fitRadiusMetres: 0.025
-  _fitMaxAngleDegrees: 35
   _boltHeadHeightMetres: 0.007
-  _detachOffPlaneMetres: 0.12
-  _detachRadiusMetres: 0.5
   _hapticStepDegrees: 4
   _numberPrefab: {fileID: 8939873600690049485, guid: d6b1400d9f7cff94eb86340665a61e02, type: 3}
   _numberHeightMetres: 0.05
