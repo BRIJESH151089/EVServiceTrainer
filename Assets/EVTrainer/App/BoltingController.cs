@@ -24,7 +24,10 @@ namespace EVTrainer.App
         [SerializeField, Min(0f)] private float _shankLengthMetres = 0.025f;
         [Tooltip("Learn: upright ghost bolt shown in every free hole.")]
         [SerializeField] private PartTint _boltGhostPrefab;
-        [SerializeField] private Color _ghostReadyColor = new Color(0.25f, 1f, 0.4f, 0.5f);
+        [SerializeField] private Color _ghostReadyColor = new Color(0.3f, 1f, 0.45f, 0.8f);
+        [Tooltip("Learn: label prefab for the short \"keep the bolt straight\" tip (text from the module data).")]
+        [SerializeField] private PartLabelView _tipLabelPrefab;
+        [SerializeField, Min(0.5f)] private float _tipSeconds = 4f;
         [Tooltip("Height of the bolt head above the surface when the thread first engages.")]
         [SerializeField, Min(0f)] private float _engageHeightMetres = 0.012f;
         [Tooltip("Pulling the hand this far from a jammed (or just inserted) bolt takes it out of the hole.")]
@@ -62,6 +65,8 @@ namespace EVTrainer.App
         private readonly Dictionary<string, FloatingNumberView> _numbers = new Dictionary<string, FloatingNumberView>();
         private readonly Dictionary<string, PartTint> _ghosts = new Dictionary<string, PartTint>();
         private string _readyHole; // free hole a held bolt would drop into (its ghost turns green)
+        private PartLabelView _tipLabel;
+        private float _tipHideTime;
         private RatchetSwing _swing;
         private PartTint _wrenchTint;
         private bool _grabbableApplied;
@@ -150,6 +155,7 @@ namespace EVTrainer.App
             UpdateWrench();
             UpdateNumbers();
             UpdateGhosts();
+            if (_tipLabel != null && Time.time > _tipHideTime) _tipLabel.Hide();
         }
 
         // ---------------- Learn: bolt ghosts ----------------
@@ -468,7 +474,7 @@ namespace EVTrainer.App
         {
             var t = rt.Adapter.transform;
             var tip = t.position - t.up * _shankLengthMetres;
-            return set.FindDropHole(tip.ToNumerics(), t.up.ToNumerics(), Progress.CaptureZone);
+            return set.FindDropHole(tip.ToNumerics(), t.up.ToNumerics(), Progress.BoltCaptureZone(set));
         }
 
         /// <summary>
@@ -491,10 +497,11 @@ namespace EVTrainer.App
             HolePose(bolt.Spec, out var holePos, out var holeRot, out var axis);
             if (state == BoltState.Started)
             {
-                PlaceThreaded(rt, bolt, holePos, holeRot, axis);
+                PlaceThreaded(rt, bolt, holePos, holeRot, axis); // upright on the hole axis, even if dropped crooked (Learn)
                 _training.ShowStatus(Learn
                     ? $"Bolt in. Grab it and twist clockwise to thread it ({bolt.Spec.ThreadTurnsToSeat:0} turns, about {TwistsToSeat(bolt.Spec)} wrist twists)."
                     : "Bolt in.", good: true);
+                if (set.StraightensCrooked && set.WouldCrossThread(hole, tilt)) ShowTip(holePos + axis * 0.07f);
             }
             else
             {
@@ -506,6 +513,20 @@ namespace EVTrainer.App
                     : "Bolt jammed: cross-threaded.", good: false);
             }
             _training.NotifyProgressChanged();
+        }
+
+        /// <summary>Learn: short "keep it straight" tip floating over a bolt that was straightened for the trainee.</summary>
+        private void ShowTip(Vector3 position)
+        {
+            var data = Data;
+            if (_tipLabelPrefab == null || data == null || string.IsNullOrEmpty(data.straightenTip)) return;
+            if (_tipLabel == null)
+            {
+                _tipLabel = Instantiate(_tipLabelPrefab, transform);
+                _tipLabel.name = "Bolt Tip Label";
+            }
+            _tipLabel.Show("Tip", data.straightenTip, position);
+            _tipHideTime = Time.time + _tipSeconds;
         }
 
         private static int TwistsToSeat(BoltSpec spec) =>

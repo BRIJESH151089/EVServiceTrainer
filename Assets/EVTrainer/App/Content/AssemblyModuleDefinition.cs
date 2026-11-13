@@ -77,6 +77,15 @@ namespace EVTrainer.App
             [Range(0f, 45f)] public float maxStartTiltDegrees = 10f;
             [Tooltip("Bolt degrees per degree of wrist twist when threading by hand.")]
             [Min(0.1f)] public float handTurnGearing = 4f;
+            [Header("Bolt drop-in (capture zone around a free hole, per mode)")]
+            [Min(0.005f)] public float learnBoltCaptureMetres = 0.06f;
+            [Range(0f, 60f)] public float learnBoltCaptureDegrees = 30f;
+            [Min(0.005f)] public float testBoltCaptureMetres = 0.03f;
+            [Range(0f, 60f)] public float testBoltCaptureDegrees = 15f;
+            [Tooltip("Learn: a bolt dropped in crooked (within the capture angle) is straightened instead of cross-threading.")]
+            public bool straightenInLearn = true;
+            [Tooltip("Learn tip shown when a crooked bolt was straightened.")]
+            public string straightenTip = "In a real job, keep the bolt straight or it cross-threads.";
             [Header("Torque wrench")]
             [Tooltip("The socket mouth attaches within this distance of the bolt axis...")]
             [Min(0.005f)] public float wrenchAttachRadiusMetres = 0.03f;
@@ -155,7 +164,10 @@ namespace EVTrainer.App
                 sets.Add(new BoltSetSpec(s.id, string.IsNullOrEmpty(s.prerequisitePartId) ? null : s.prerequisitePartId,
                     bolts, s.patternOrder, s.handStartInstruction, s.torqueInstruction, s.groupName,
                     new WrenchSpec(s.wrenchAttachRadiusMetres, s.wrenchAttachMaxAboveMetres, s.wrenchAttachMaxBelowMetres,
-                        s.wrenchAttachMaxTiltDegrees, s.wrenchDetachOffPlaneMetres, s.ratchetClickDegrees)));
+                        s.wrenchAttachMaxTiltDegrees, s.wrenchDetachOffPlaneMetres, s.ratchetClickDegrees),
+                    new SnapAssist(new CaptureZone(s.learnBoltCaptureMetres, s.learnBoltCaptureDegrees),
+                        new CaptureZone(s.testBoltCaptureMetres, s.testBoltCaptureDegrees)),
+                    s.straightenInLearn));
             }
             var snapAssist = new SnapAssist(new CaptureZone(_learnCaptureMetres, _learnCaptureDegrees),
                 new CaptureZone(_testCaptureMetres, _testCaptureDegrees));

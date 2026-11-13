@@ -47,11 +47,12 @@ namespace EVTrainer.Core
         private readonly List<BoltTightening> _bolts = new List<BoltTightening>();
         private readonly MistakeLog _log;
 
-        public BoltSet(BoltSetSpec spec, bool blockOutOfOrder, MistakeLog log)
+        public BoltSet(BoltSetSpec spec, bool blockOutOfOrder, MistakeLog log, bool straightenCrooked = false)
         {
             Spec = spec ?? throw new ArgumentNullException(nameof(spec));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             BlockOutOfOrder = blockOutOfOrder;
+            StraightensCrooked = straightenCrooked;
             Pattern = new TorquePatternValidator(spec.PatternOrder);
             foreach (var b in spec.Bolts)
             {
@@ -66,6 +67,14 @@ namespace EVTrainer.Core
 
         /// <summary>Learn: out-of-order torquing is blocked. Test: allowed but logged.</summary>
         public bool BlockOutOfOrder { get; }
+
+        /// <summary>Learn: a crooked drop-in is straightened (Started, not logged) instead of cross-threading.</summary>
+        public bool StraightensCrooked { get; }
+
+        /// <summary>True when a drop at <paramref name="tiltDegrees"/> into this hole would cross-thread without straightening
+        /// (Learn uses it to show "keep the bolt straight" while still straightening).</summary>
+        public bool WouldCrossThread(string holeId, float tiltDegrees) =>
+            BoltTightening.IsCrossThreaded(tiltDegrees, Get(holeId).Spec.MaxStartTiltDegrees);
 
         public IReadOnlyList<BoltTightening> Bolts => _bolts;
         public int Count => _bolts.Count;
@@ -147,7 +156,7 @@ namespace EVTrainer.Core
             var bolt = Get(holeId);
             if (_occupied.Contains(holeId)) return bolt.State;
             _occupied.Add(holeId);
-            var state = bolt.DropIn(tiltDegrees);
+            var state = bolt.DropIn(StraightensCrooked ? 0f : tiltDegrees);
             if (state == BoltState.CrossThreaded) LogCrossThread(bolt, holeId, tiltDegrees, timeSeconds);
             return state;
         }

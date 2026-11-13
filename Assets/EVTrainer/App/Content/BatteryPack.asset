@@ -261,6 +261,12 @@ MonoBehaviour:
     stiffnessNmPerDegree: 0.1
     maxStartTiltDegrees: 10
     handTurnGearing: 4
+    learnBoltCaptureMetres: 0.06
+    learnBoltCaptureDegrees: 30
+    testBoltCaptureMetres: 0.03
+    testBoltCaptureDegrees: 15
+    straightenInLearn: 1
+    straightenTip: In a real job, keep the bolt straight or it cross-threads.
     wrenchAttachRadiusMetres: 0.03
     wrenchAttachMaxAboveMetres: 0.04
     wrenchAttachMaxBelowMetres: 0.03

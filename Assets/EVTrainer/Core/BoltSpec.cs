@@ -69,8 +69,12 @@ namespace EVTrainer.Core
             string handStartInstruction = "Hand-start bolts",
             string torqueInstruction = "Torque bolts in pattern",
             string groupName = "bolts",
-            WrenchSpec wrench = null)
+            WrenchSpec wrench = null,
+            SnapAssist capture = null,
+            bool straightenInLearn = false)
         {
+            Capture = capture;
+            StraightenInLearn = straightenInLearn;
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Bolt set id is required.", nameof(id));
             if (bolts == null) throw new ArgumentNullException(nameof(bolts));
             Id = id;
@@ -115,5 +119,11 @@ namespace EVTrainer.Core
 
         /// <summary>How the torque wrench attaches to and comes off these bolts.</summary>
         public WrenchSpec Wrench { get; }
+
+        /// <summary>Drop-in capture zones per mode for these bolts; null = the assembly's snap assist.</summary>
+        public SnapAssist Capture { get; }
+
+        /// <summary>Learn: a bolt dropped in crooked (within the capture angle) is straightened instead of cross-threading.</summary>
+        public bool StraightenInLearn { get; }
     }
 }

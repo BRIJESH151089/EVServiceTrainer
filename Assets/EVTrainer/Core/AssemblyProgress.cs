@@ -26,7 +26,9 @@ namespace EVTrainer.Core
             foreach (var set in definition.BoltSets)
             {
                 // Learn blocks out-of-pattern torquing; Test allows it and only logs it.
-                var bolts = new BoltSet(set, blockOutOfOrder: mode == TrainingMode.Learn, Mistakes);
+                // Learn may also straighten crooked drop-ins (module data); Test cross-threads them.
+                bool learn = mode == TrainingMode.Learn;
+                var bolts = new BoltSet(set, blockOutOfOrder: learn, Mistakes, straightenCrooked: learn && set.StraightenInLearn);
                 _boltSets.Add(bolts);
                 _boltSetsById.Add(set.Id, bolts);
             }
@@ -68,6 +70,9 @@ namespace EVTrainer.Core
 
         /// <summary>Snap-assist capture zone of this run's mode (Learn is wider than Test).</summary>
         public CaptureZone CaptureZone => Definition.SnapAssist.For(Mode);
+
+        /// <summary>Drop-in capture zone for the bolts of <paramref name="set"/> in this mode (the set's own, else the assembly's).</summary>
+        public CaptureZone BoltCaptureZone(BoltSet set) => set.Spec.Capture?.For(Mode) ?? CaptureZone;
 
         /// <summary>Installed slot ids in the order they were installed (pre-installed slots first).</summary>
         public IReadOnlyList<string> InstalledPartIds => _installOrder;
