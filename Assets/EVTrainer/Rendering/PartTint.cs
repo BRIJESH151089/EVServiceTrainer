@@ -74,8 +74,9 @@ namespace EVTrainer.Rendering
                 var c = _tint ?? _baseColors[i];
                 if (_highlighted)
                 {
+                    // Brighten (colours above 1 lighten the texture of atlas materials) with a warm hue.
                     float a = c.a;
-                    c = Color.Lerp(c, _highlightColor, _highlightAmount);
+                    c = Color.Lerp(c, _highlightColor, _highlightAmount * 0.5f) * (1f + _highlightAmount);
                     c.a = a;
                 }
                 _block.SetColor(BaseColorId, c);
