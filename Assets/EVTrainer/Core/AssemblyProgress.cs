@@ -28,7 +28,8 @@ namespace EVTrainer.Core
                 // Learn blocks out-of-pattern torquing; Test allows it and only logs it.
                 // Learn may also straighten crooked drop-ins (module data); Test cross-threads them.
                 bool learn = mode == TrainingMode.Learn;
-                var bolts = new BoltSet(set, blockOutOfOrder: learn, Mistakes, straightenCrooked: learn && set.StraightenInLearn);
+                var bolts = new BoltSet(set, blockOutOfOrder: learn, Mistakes, straightenCrooked: learn && set.StraightenInLearn,
+                    autoDetachWhenFinished: learn);
                 _boltSets.Add(bolts);
                 _boltSetsById.Add(set.Id, bolts);
             }

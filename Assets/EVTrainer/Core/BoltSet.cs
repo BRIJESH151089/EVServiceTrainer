@@ -47,8 +47,10 @@ namespace EVTrainer.Core
         private readonly List<BoltTightening> _bolts = new List<BoltTightening>();
         private readonly MistakeLog _log;
 
-        public BoltSet(BoltSetSpec spec, bool blockOutOfOrder, MistakeLog log, bool straightenCrooked = false)
+        public BoltSet(BoltSetSpec spec, bool blockOutOfOrder, MistakeLog log, bool straightenCrooked = false,
+            bool autoDetachWhenFinished = false)
         {
+            AutoDetachWhenFinished = autoDetachWhenFinished;
             Spec = spec ?? throw new ArgumentNullException(nameof(spec));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             BlockOutOfOrder = blockOutOfOrder;
@@ -70,6 +72,12 @@ namespace EVTrainer.Core
 
         /// <summary>Learn: a crooked drop-in is straightened (Started, not logged) instead of cross-threading.</summary>
         public bool StraightensCrooked { get; }
+
+        /// <summary>
+        /// Learn: the wrench comes off by itself once a bolt is finished. Test: it stays on; the trainee must lift it off
+        /// at the click, and swinging on past the window over-torques (logged).
+        /// </summary>
+        public bool AutoDetachWhenFinished { get; }
 
         /// <summary>True when a drop at <paramref name="tiltDegrees"/> into this hole would cross-thread without straightening
         /// (Learn uses it to show "keep the bolt straight" while still straightening).</summary>

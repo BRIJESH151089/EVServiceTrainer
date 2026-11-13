@@ -228,6 +228,12 @@ namespace EVTrainer.App
                 zoneStart, zoneEnd, look);
         }
 
+        private void MarkDone(string hole)
+        {
+            _doneHole = hole;
+            _doneUntil = Time.time + _doneShowSeconds;
+        }
+
         /// <summary>Direction in the bolt's plane from the bolt towards the trainee (where a handle naturally starts).</summary>
         private static Vector3 TowardUser(Vector3 boltPosition, Vector3 axis)
         {
@@ -301,6 +307,7 @@ namespace EVTrainer.App
             var wrenchSpec = set.Spec.Wrench;
             if (wrenchSpec.ShouldDetach(hand.ToNumerics(), headTop.ToNumerics(), axis.ToNumerics()))
             {
+                if (bolt.IsFinished) MarkDone(_wrenchHole); // lifted off a finished bolt (Test): ring shows done a moment
                 Detach(); // pulled off the swing plane (keeps the last bolt message on the HUD)
                 ShowGauge(set);
                 return;
@@ -317,12 +324,12 @@ namespace EVTrainer.App
                 SpinBolt(_wrenchHole, step.DriveDegrees, holePos, holeRot, axis);
                 RampHaptics(bolt, step.DriveDegrees);
                 if (after != before) OnTorqueStateChanged(set, bolt, after);
-                if (bolt.IsFinished)
+                if (bolt.IsFinished && set.AutoDetachWhenFinished)
                 {
-                    // Done: the wrench comes off by itself and stays in the hand, ready for the next bolt;
-                    // the ring stays a moment on the finished bolt (green with a check, or red).
-                    _doneHole = _wrenchHole;
-                    _doneUntil = Time.time + _doneShowSeconds;
+                    // Learn: done, the wrench comes off by itself and stays in the hand, ready for the next bolt;
+                    // the ring stays a moment on the finished bolt (green with a check, or red). Test: it stays on
+                    // until the trainee lifts it off; swinging on past the window over-torques.
+                    MarkDone(_wrenchHole);
                     Detach();
                     ShowGauge(set);
                     return;
@@ -500,7 +507,7 @@ namespace EVTrainer.App
             int n = set.Pattern.SequenceNumber(bolt.Spec.HoleId);
             if (state == BoltState.Torqued)
             {
-                _wrench.Pulse(1f, 0.12f);
+                _wrench.Pulse(1f, set.AutoDetachWhenFinished ? 0.12f : 0.3f); // Test: a strong buzz says "stop and lift off"
                 _audio.transform.position = _wrench.SocketMouth;
                 _audio.PlayOneShot(_click, 1f);
                 var next = set.NextInPattern;
