@@ -8,10 +8,10 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace EVTrainer.XR
 {
     /// <summary>
-    /// XRI side of a physical push button. Near use: an XRPokeInteractor (fingertip / controller tip) hovering this
+    /// XRI side of a physical push button, poke only: an XRPokeInteractor (fingertip / controller tip) hovering this
     /// XRSimpleInteractable (gated by an XRPokeFilter so only front-on pokes count) pushes the cap; the press depth is
     /// how far the tip has gone past the cap's rest face along this transform's forward (push direction).
-    /// Distant use: a UI ray selecting the button requests a click. Haptic pulse on the controller that pressed it.
+    /// Haptic pulse on the controller that pressed it.
     /// </summary>
     [RequireComponent(typeof(XRSimpleInteractable))]
     public sealed class PokeButtonInput : MonoBehaviour, IPushButtonInput
@@ -22,36 +22,22 @@ namespace EVTrainer.XR
         [SerializeField, Min(0f)] private float _hapticSeconds = 0.04f;
 
         private XRSimpleInteractable _interactable;
-        private bool _remoteClick;
         private IXRInteractor _lastPresser;
 
         private void Awake()
         {
             _interactable = GetComponent<XRSimpleInteractable>();
-            _interactable.selectEntered.AddListener(OnSelectEntered);
             _interactable.hoverEntered.AddListener(OnHoverEntered);
         }
 
         private void OnDestroy()
         {
-            if (_interactable == null) return;
-            _interactable.selectEntered.RemoveListener(OnSelectEntered);
-            _interactable.hoverEntered.RemoveListener(OnHoverEntered);
+            if (_interactable != null) _interactable.hoverEntered.RemoveListener(OnHoverEntered);
         }
 
         private void OnHoverEntered(HoverEnterEventArgs args)
         {
             if (args.interactorObject is XRPokeInteractor) _lastPresser = args.interactorObject;
-        }
-
-        private void OnSelectEntered(SelectEnterEventArgs args)
-        {
-            // Pokes are measured by depth below; a ray "select" is a distant click.
-            if (args.interactorObject is XRRayInteractor)
-            {
-                _remoteClick = true;
-                _lastPresser = args.interactorObject;
-            }
         }
 
         public float PressDepth01
@@ -70,13 +56,6 @@ namespace EVTrainer.XR
                 }
                 return deepest;
             }
-        }
-
-        public bool ConsumeRemoteClick()
-        {
-            bool click = _remoteClick;
-            _remoteClick = false;
-            return click;
         }
 
         public void NotifyClicked()

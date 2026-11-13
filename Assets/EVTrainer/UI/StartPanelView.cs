@@ -4,16 +4,25 @@ using UnityEngine;
 
 namespace EVTrainer.UI
 {
-    /// <summary>Mode selection shown before a run: two physical push buttons, "Learn mode" and "Test mode".</summary>
+    /// <summary>
+    /// Mode selection: two latching push buttons, "Learn" and "Test". The chosen one stays pressed in (selected) and
+    /// the other is disabled until Restart, so the panel also shows the current mode during the run.
+    /// </summary>
     public sealed class StartPanelView : MonoBehaviour
     {
         [Tooltip("Module title; set at runtime from the loaded module data.")]
         [SerializeField] private TMPro.TMP_Text _title;
+        [Tooltip("\"Choose a mode\" before the run; the chosen mode after.")]
+        [SerializeField] private TMPro.TMP_Text _prompt;
         [SerializeField] private PushButtonView _learnButton;
         [SerializeField] private PushButtonView _testButton;
 
-        /// <summary>Raised once when the trainee picks a mode; the panel hides itself.</summary>
+        private bool _chosen;
+
+        /// <summary>Raised once when the trainee picks a mode.</summary>
         public event Action<TrainingMode> ModeChosen;
+
+        public bool HasChosen => _chosen;
 
         private void Awake()
         {
@@ -21,7 +30,7 @@ namespace EVTrainer.UI
             if (_testButton != null) _testButton.Clicked += () => Choose(TrainingMode.Test);
         }
 
-        /// <summary>Shows the panel with the title of the module about to be trained.</summary>
+        /// <summary>Shows the panel with the title of the module about to be trained, both buttons available.</summary>
         public void Show(string moduleTitle)
         {
             if (_title != null && !string.IsNullOrEmpty(moduleTitle)) _title.text = moduleTitle;
@@ -30,9 +39,12 @@ namespace EVTrainer.UI
 
         private void Choose(TrainingMode mode)
         {
-            if (!gameObject.activeSelf) return;
-            Debug.Log($"[EVTrainer] Start panel: '{mode}' button clicked; hiding panel.");
-            gameObject.SetActive(false); // whole panel: buttons, colliders and interactables
+            if (_chosen) return;
+            _chosen = true;
+            Debug.Log($"[EVTrainer] Start panel: '{mode}' chosen (button latched until Restart).");
+            var other = mode == TrainingMode.Learn ? _testButton : _learnButton;
+            if (other != null) other.SetInteractable(false);
+            if (_prompt != null) _prompt.text = $"{mode} mode. Press Restart to change.";
             ModeChosen?.Invoke(mode);
         }
     }
