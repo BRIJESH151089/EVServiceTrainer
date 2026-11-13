@@ -45,7 +45,7 @@ namespace EVTrainer.App
         [SerializeField] private TrainingHudView _hud;
         [Tooltip("Learn / Test choice shown before each run. Without it the run starts in Learn mode.")]
         [SerializeField] private StartPanelView _startPanel;
-        [Tooltip("Learn mode: name + hint label above the hovered or held part.")]
+        [Tooltip("Learn mode: name + hint label above the part while it is held.")]
         [SerializeField] private PartLabelView _partLabel;
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.06f;
         [Tooltip("Bolt hand-start and torque wrench flow (optional; modules without bolts leave it empty).")]
@@ -335,7 +335,7 @@ namespace EVTrainer.App
             if (_ghosts != null) _ghosts.SetReady(Progress.Mode == TrainingMode.Learn ? ready : null);
         }
 
-        /// <summary>Learn mode: label the held part (else the hovered one) with its name and hint from the module data.</summary>
+        /// <summary>Learn mode: label the part while it is held (never on hover; never in Test) with its name and hint.</summary>
         private void UpdatePartLabel()
         {
             if (_partLabel == null) return;
@@ -344,9 +344,6 @@ namespace EVTrainer.App
             {
                 foreach (var part in _parts)
                     if (part.IsHeld && !part.IsLocked) { focus = part; break; }
-                if (focus == null)
-                    foreach (var part in _parts)
-                        if (part.IsHovered && !part.IsLocked) { focus = part; break; }
             }
 
             var slots = focus != null ? _definition.SlotsOfType(focus.PartTypeId) : null;

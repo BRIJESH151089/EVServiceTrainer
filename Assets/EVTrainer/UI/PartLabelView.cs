@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EVTrainer.UI
 {
     /// <summary>
-    /// Small world-space label (part name + one-line hint) that floats above the hovered or held part
+    /// Small world-space label (part name + one-line hint) that floats above the held part
     /// and turns to face the viewer (yaw only, so it stays upright).
     /// </summary>
     public sealed class PartLabelView : MonoBehaviour

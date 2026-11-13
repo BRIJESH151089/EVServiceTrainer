@@ -576,14 +576,14 @@ namespace EVTrainer.App
 
         // ---------------- Labels (Learn) ----------------
 
-        /// <summary>Label for the held (else hovered) bolt, from the module data.</summary>
+        /// <summary>Label for the held wrench or bolt (only while held), from the module data.</summary>
         public bool TryGetLabel(out string title, out string hint, out Vector3 position)
         {
             title = hint = null;
             position = default;
             var data = Data;
             if (data == null) return false;
-            if (_wrench != null && (_wrench.IsHeld || _wrench.IsHovered))
+            if (_wrench != null && _wrench.IsHeld)
             {
                 title = data.wrenchName;
                 hint = data.wrenchHint;
@@ -592,7 +592,6 @@ namespace EVTrainer.App
             }
             BoltRuntime focus = null;
             foreach (var rt in _runtimes) if (rt.Adapter.IsHeld) { focus = rt; break; }
-            if (focus == null) foreach (var rt in _runtimes) if (rt.Adapter.IsHovered) { focus = rt; break; }
             if (focus == null) return false;
             title = data.boltName;
             hint = data.boltHint;
