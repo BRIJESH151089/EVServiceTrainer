@@ -746,6 +746,14 @@ namespace EVTrainer.App
         /// Learn labels for the bench: one for the loose bolts in the tray ("Cover bolts ×8") and one for the wrench
         /// while it rests (not held, not on a bolt). Appends key, text and anchor for each.
         /// </summary>
+        /// <summary>Bolts carried freely and the wrench while held off a bolt (for contact shadows).</summary>
+        public void CollectHeld(List<Transform> into)
+        {
+            foreach (var rt in _runtimes)
+                if (rt.Adapter.IsHeld && rt.Hole == null) into.Add(rt.Adapter.transform);
+            if (_wrench != null && _wrench.IsHeld && _wrenchHole == null) into.Add(_wrench.transform);
+        }
+
         public void CollectStagedLabels(List<string> keys, List<string> texts, List<System.Numerics.Vector3> anchors)
         {
             var data = Data;

@@ -134,6 +134,13 @@ namespace EVTrainer.App
         /// <summary>Seconds since the run started (for the mistake log).</summary>
         public double RunTime => Time.time - _runStartTime;
 
+        /// <summary>Parts the trainee is carrying right now (for contact shadows).</summary>
+        public void CollectCarried(List<Transform> into)
+        {
+            foreach (var part in _parts)
+                if (part.IsCarried && !part.IsLocked) into.Add(part.transform);
+        }
+
         /// <summary>Called by other run-time parts (e.g. bolting) when progress changed: redraw HUD and debug panel.</summary>
         public void NotifyProgressChanged()
         {
