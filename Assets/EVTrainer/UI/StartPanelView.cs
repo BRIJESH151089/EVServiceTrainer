@@ -41,7 +41,7 @@ namespace EVTrainer.UI
         {
             if (_chosen) return;
             _chosen = true;
-            Debug.Log($"[EVTrainer] Start panel: '{mode}' chosen (button latched until Restart).");
+            DevLog.Info($"Start panel: '{mode}' chosen (button latched until Restart).");
             var other = mode == TrainingMode.Learn ? _testButton : _learnButton;
             if (other != null) other.SetInteractable(false);
             if (_prompt != null) _prompt.text = $"{mode} mode. Press Restart to change.";

@@ -59,6 +59,8 @@ namespace EVTrainer.App
         [Tooltip("Comfort fade on the headset camera (fade out before the reload; the new scene fades in).")]
         [SerializeField] private ScreenFader _fader;
 
+        // Debug-only fields: release builds compile their use out (see Awake and Update), so silence "never used".
+#pragma warning disable CS0414
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
         [Tooltip("Shows/hides the debug panel (left X button; F2 in the Editor).")]
@@ -79,6 +81,7 @@ namespace EVTrainer.App
         private AssemblyDefinition _definition;
         private float _nextPanelRefresh;
         private string _lastInstallText;
+#pragma warning restore CS0414
         private float _runStartTime;
         private InstallResult? _lastEvaluation;
 
@@ -115,6 +118,19 @@ namespace EVTrainer.App
 
             // Placeholder progress so the HUD can list the steps while the trainee picks a mode.
             Progress = new AssemblyProgress(_definition, TrainingMode.Learn);
+
+#if !(DEVELOPMENT_BUILD || UNITY_EDITOR)
+            // Release build: the debug panel and the joint-sphere debug visual do not exist.
+            if (_debugPanel != null) Destroy(_debugPanel.gameObject);
+            if (_leftHandVisual != null) Destroy(_leftHandVisual.gameObject);
+            if (_rightHandVisual != null) Destroy(_rightHandVisual.gameObject);
+            if (_interactorStatus != null) Destroy(_interactorStatus);
+            _debugPanel = null;
+            _leftHandVisual = null;
+            _rightHandVisual = null;
+            _interactorStatus = null;
+            _debugToggle = null;
+#endif
         }
 
         /// <summary>True once a mode has been chosen and the run has started.</summary>
@@ -132,7 +148,7 @@ namespace EVTrainer.App
             SetRunUiVisible(true);
             RefreshGhosts();
             RefreshHud();
-            Debug.Log($"[EVTrainer] Run started: mode={mode}, start panel active={(_startPanel != null && _startPanel.gameObject.activeInHierarchy)}, " +
+            DevLog.Info($"Run started: mode={mode}, start panel active={(_startPanel != null && _startPanel.gameObject.activeInHierarchy)}, " +
                       $"grabbable parts={GrabbableCount()}/{_parts.Length}");
             _nextPanelRefresh = 0f;
         }
@@ -224,7 +240,7 @@ namespace EVTrainer.App
                 _hud.ShowNotice("Choose Learn or Test with the buttons below.", warning: false);
             }
             RefreshGhosts();
-            Debug.Log($"[EVTrainer] Waiting for mode selection ({_definition.Title}); parts locked until then.");
+            DevLog.Info($"Waiting for mode selection ({_definition.Title}); parts locked until then.");
         }
 
         /// <summary>Restart only appears once a run has started (the info panel is always shown).</summary>
@@ -240,7 +256,7 @@ namespace EVTrainer.App
         {
             if (_restarting) return;
             _restarting = true;
-            Debug.Log("[EVTrainer] Restart pressed: reloading the scene.");
+            DevLog.Info("Restart pressed: reloading the scene.");
             // Fade to black first; the reloaded scene fades back in, so the view never jumps.
             string scene = gameObject.scene.name;
             if (_fader != null) _fader.FadeOutThen(() => UnityEngine.SceneManagement.SceneManager.LoadScene(scene));
@@ -393,18 +409,20 @@ namespace EVTrainer.App
 
         private void Update()
         {
-            RenderHand(_leftHand, _leftHandVisual);
-            RenderHand(_rightHand, _rightHandVisual);
             UpdateHoverHighlights();
             UpdateHeldPreview();
             UpdatePartLabels();
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            RenderHand(_leftHand, _leftHandVisual);
+            RenderHand(_rightHand, _rightHandVisual);
             if (_debugToggle != null && _debugToggle.WasPressedThisFrame && _debugPanel != null)
             {
                 _debugPanel.gameObject.SetActive(!_debugPanel.gameObject.activeSelf);
                 _nextPanelRefresh = 0f;
             }
             UpdateDebugPanel();
+#endif
         }
 
         private readonly Dictionary<GrabbablePartAdapter, PartTint> _tints = new Dictionary<GrabbablePartAdapter, PartTint>();
@@ -515,6 +533,7 @@ namespace EVTrainer.App
             return b;
         }
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR // debug panel and joint spheres: not in release builds
         private void UpdateDebugPanel()
         {
             if (_debugPanel == null || !_debugPanel.isActiveAndEnabled) return;
@@ -565,5 +584,6 @@ namespace EVTrainer.App
             if (controller != null && controller.isActiveAndEnabled) return controller.Current;
             return handActive ? hand.Current : InputFrame.None;
         }
+#endif
     }
 }

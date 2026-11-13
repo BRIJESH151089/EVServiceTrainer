@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using EVTrainer.Core;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -42,7 +43,7 @@ namespace EVTrainer.App
             var prefab = FindSimulatorPrefab();
             if (prefab == null)
             {
-                Debug.Log($"[EVTrainer] '{PrefabName}' sample not found under {SamplesFolder}; running without the simulator. " +
+                DevLog.Info($"'{PrefabName}' sample not found under {SamplesFolder}; running without the simulator. " +
                           "Import it via Window > Package Manager > XR Interaction Toolkit > Samples.");
                 return;
             }
@@ -50,7 +51,7 @@ namespace EVTrainer.App
             var instance = Object.Instantiate(prefab);
             instance.name = prefab.name;
             Object.DontDestroyOnLoad(instance);
-            Debug.Log($"[EVTrainer] No XR headset active: spawned '{PrefabName}' for in-Editor testing.");
+            DevLog.Info($"No XR headset active: spawned '{PrefabName}' for in-Editor testing.");
         }
 
         private static GameObject FindSimulatorPrefab()
