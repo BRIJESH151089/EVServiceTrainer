@@ -408,6 +408,7 @@ namespace EVTrainer.App
             string mode = IsRunning ? Progress.Mode.ToString() : "not chosen";
             bool panelActive = _startPanel != null && _startPanel.gameObject.activeInHierarchy;
             string head = $"Mode: {mode} | start panel: {(panelActive ? "shown" : "hidden")} | grabbable parts: {GrabbableCount()}/{_parts.Length}";
+            if (_bolting != null) head += "\n" + _bolting.DescribeWrench();
             return _interactorStatus != null ? head + "\n" + _interactorStatus.Describe() : head;
         }
 

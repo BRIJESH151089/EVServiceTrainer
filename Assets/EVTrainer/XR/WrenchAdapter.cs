@@ -8,31 +8,43 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace EVTrainer.XR
 {
     /// <summary>
-    /// XRI side of the torque wrench. Measures only: where the holding hand is (to swing the handle about a bolt axis)
-    /// and where the socket is. While fitted on a bolt it stops following the hand and is posed by the App
-    /// (socket on the bolt head, handle pointing at the hand).
+    /// XRI side of the torque wrench. Measures only: where the holding hand is and where the socket mouth is.
+    /// Once attached to a bolt, XRI stops moving it (no position/rotation tracking, no Rigidbody interpolation)
+    /// and the pose set by the App is the only thing that places it, re-applied every frame up to rendering.
+    /// The trainee can hold the handle anywhere (dynamic attach).
     /// </summary>
     [RequireComponent(typeof(XRGrabInteractable))]
     public sealed class WrenchAdapter : MonoBehaviour
     {
+        [Tooltip("Open end of the socket (sits on the bolt head when attached). Defaults to this transform.")]
+        [SerializeField] private Transform _socketMouth;
+
         private XRGrabInteractable _grab;
         private Rigidbody _rigidbody;
         private IXRSelectInteractor _interactor;
+        private bool _attached;
+        private Vector3 _drivenPosition;
+        private Quaternion _drivenRotation;
+        private RigidbodyInterpolation _interpolation;
 
         public event Action<WrenchAdapter> Released;
 
         public bool IsHeld => _interactor != null;
         public bool IsHovered => _grab != null && _grab.isHovered;
+        public bool IsAttached => _attached;
         public bool HeldByHand => _interactor != null && _interactor.transform.GetComponentInParent<HandTrackingAdapter>() != null;
 
         /// <summary>World position of the hand / controller attach point holding the wrench (valid while held).</summary>
         public Vector3 HandPosition => _interactor != null ? _interactor.GetAttachTransform(_grab).position : transform.position;
 
-        /// <summary>The socket's working point (the wrench pivot): sits on top of the bolt head when fitted.</summary>
-        public Vector3 SocketPosition => transform.position;
+        /// <summary>Open end of the socket.</summary>
+        public Vector3 SocketMouth => _socketMouth != null ? _socketMouth.position : transform.position;
 
         /// <summary>Socket axis (the wrench's local up).</summary>
         public Vector3 SocketAxis => transform.up;
+
+        /// <summary>Distance from the socket mouth to the wrench origin, along the socket axis.</summary>
+        public float MouthToOrigin => _socketMouth != null ? Vector3.Dot(transform.position - _socketMouth.position, transform.up) : 0f;
 
         private void Awake()
         {
@@ -44,12 +56,14 @@ namespace EVTrainer.XR
         {
             _grab.selectEntered.AddListener(OnSelectEntered);
             _grab.selectExited.AddListener(OnSelectExited);
+            Application.onBeforeRender += ApplyDrivenPose;
         }
 
         private void OnDisable()
         {
             _grab.selectEntered.RemoveListener(OnSelectEntered);
             _grab.selectExited.RemoveListener(OnSelectExited);
+            Application.onBeforeRender -= ApplyDrivenPose;
         }
 
         private void OnSelectEntered(SelectEnterEventArgs args) => _interactor = args.interactorObject;
@@ -57,7 +71,7 @@ namespace EVTrainer.XR
         private void OnSelectExited(SelectExitEventArgs args)
         {
             _interactor = null;
-            SetFitted(false);
+            SetAttached(false);
             Released?.Invoke(this);
         }
 
@@ -67,20 +81,45 @@ namespace EVTrainer.XR
             _grab.enabled = grabbable;
         }
 
-        /// <summary>Fitted on a bolt: no longer follows the hand; the App poses it each frame.</summary>
-        public void SetFitted(bool fitted)
+        /// <summary>
+        /// Attached to a bolt: XRI no longer moves the wrench and the Rigidbody does not interpolate, so only
+        /// <see cref="Drive"/> places it. Detached: it follows the hand again from where the hand holds it.
+        /// </summary>
+        public void SetAttached(bool attached)
         {
-            _grab.trackPosition = !fitted;
-            _grab.trackRotation = !fitted;
+            if (_attached == attached) return;
+            _attached = attached;
+            _grab.trackPosition = !attached;
+            _grab.trackRotation = !attached;
+            if (_rigidbody == null) return;
+            if (attached)
+            {
+                _interpolation = _rigidbody.interpolation;
+                _rigidbody.interpolation = RigidbodyInterpolation.None;
+                _drivenPosition = transform.position;
+                _drivenRotation = transform.rotation;
+            }
+            else _rigidbody.interpolation = _interpolation;
         }
 
-        public void SetPose(Vector3 position, Quaternion rotation)
+        /// <summary>Attached: the pose to hold this frame (re-applied late in the frame and before rendering).</summary>
+        public void Drive(Vector3 position, Quaternion rotation)
         {
-            transform.SetPositionAndRotation(position, rotation);
+            _drivenPosition = position;
+            _drivenRotation = rotation;
+            ApplyDrivenPose();
+        }
+
+        private void LateUpdate() => ApplyDrivenPose();
+
+        private void ApplyDrivenPose()
+        {
+            if (!_attached) return;
+            transform.SetPositionAndRotation(_drivenPosition, _drivenRotation);
             if (_rigidbody != null)
             {
-                _rigidbody.position = position;
-                _rigidbody.rotation = rotation;
+                _rigidbody.position = _drivenPosition;
+                _rigidbody.rotation = _drivenRotation;
             }
         }
 

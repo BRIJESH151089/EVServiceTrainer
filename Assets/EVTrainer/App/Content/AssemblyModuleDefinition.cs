@@ -75,6 +75,19 @@ namespace EVTrainer.App
             [Min(0f)] public float torqueToleranceNm = 0.4f;
             [Min(0.001f)] public float stiffnessNmPerDegree = 0.1f;
             [Range(0f, 45f)] public float maxStartTiltDegrees = 10f;
+            [Header("Torque wrench")]
+            [Tooltip("The socket mouth attaches within this distance of the bolt axis...")]
+            [Min(0.005f)] public float wrenchAttachRadiusMetres = 0.03f;
+            [Tooltip("...from this far above the top of the bolt head...")]
+            [Min(0f)] public float wrenchAttachMaxAboveMetres = 0.04f;
+            [Tooltip("...to this far below it (socket pushed over the head)...")]
+            [Min(0f)] public float wrenchAttachMaxBelowMetres = 0.03f;
+            [Tooltip("...with the socket within this angle of the bolt axis.")]
+            [Range(0f, 90f)] public float wrenchAttachMaxTiltDegrees = 45f;
+            [Tooltip("Moving the holding hand this far off the swing plane takes the wrench off.")]
+            [Min(0.02f)] public float wrenchDetachOffPlaneMetres = 0.15f;
+            [Tooltip("Soft ratchet click every this many degrees of back-swing.")]
+            [Min(1f)] public float ratchetClickDegrees = 6f;
             [Header("Learn-mode labels")]
             public string boltName = "Bolt";
             public string boltHint;
@@ -132,7 +145,9 @@ namespace EVTrainer.App
                         s.threadTurnsToSeat, s.torqueSpecNm, s.torqueToleranceNm, s.stiffnessNmPerDegree, s.maxStartTiltDegrees));
                 }
                 sets.Add(new BoltSetSpec(s.id, string.IsNullOrEmpty(s.prerequisitePartId) ? null : s.prerequisitePartId,
-                    bolts, s.patternOrder, s.handStartInstruction, s.torqueInstruction, s.groupName));
+                    bolts, s.patternOrder, s.handStartInstruction, s.torqueInstruction, s.groupName,
+                    new WrenchSpec(s.wrenchAttachRadiusMetres, s.wrenchAttachMaxAboveMetres, s.wrenchAttachMaxBelowMetres,
+                        s.wrenchAttachMaxTiltDegrees, s.wrenchDetachOffPlaneMetres, s.ratchetClickDegrees)));
             }
             return new AssemblyDefinition(_id, _title, specs, sets);
         }

@@ -816,6 +816,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 878d1f7c2482dbf459282c65d99735ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.WrenchAdapter
+  _socketMouth: {fileID: 1239074981473234254}
 --- !u!1 &9107729639891402885
 GameObject:
   m_ObjectHideFlags: 0

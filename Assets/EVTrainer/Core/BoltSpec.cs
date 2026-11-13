@@ -62,7 +62,8 @@ namespace EVTrainer.Core
             IEnumerable<string> patternOrder,
             string handStartInstruction = "Hand-start bolts",
             string torqueInstruction = "Torque bolts in pattern",
-            string groupName = "bolts")
+            string groupName = "bolts",
+            WrenchSpec wrench = null)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Bolt set id is required.", nameof(id));
             if (bolts == null) throw new ArgumentNullException(nameof(bolts));
@@ -89,6 +90,7 @@ namespace EVTrainer.Core
             HandStartInstruction = handStartInstruction;
             TorqueInstruction = torqueInstruction;
             GroupName = groupName;
+            Wrench = wrench ?? WrenchSpec.Default;
         }
 
         public string Id { get; }
@@ -104,5 +106,8 @@ namespace EVTrainer.Core
         public string HandStartInstruction { get; }
         public string TorqueInstruction { get; }
         public string GroupName { get; }
+
+        /// <summary>How the torque wrench attaches to and comes off these bolts.</summary>
+        public WrenchSpec Wrench { get; }
     }
 }
