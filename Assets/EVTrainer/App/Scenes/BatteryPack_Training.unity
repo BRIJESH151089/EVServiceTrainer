@@ -2773,6 +2773,58 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 626548879948071807, guid: d9a93b82437282c46b7161d3b76a027b, type: 3}
   m_PrefabInstance: {fileID: 920425198}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1067252261
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1067252263}
+  - component: {fileID: 1067252262}
+  m_Layer: 0
+  m_Name: Swing Arrow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1067252262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1067252261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1a9e184b9e4abe48bab9d7e5a40730c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.SwingArrowView
+  _material: {fileID: 2100000, guid: 084bd7b93867d3549b9c7cbc32e52197, type: 2}
+  _radius: 0.09
+  _width: 0.009
+  _arcDegrees: 100
+  _sweepDegrees: 35
+  _periodSeconds: 1.4
+  _heightAboveSurface: 0.03
+  _color: {r: 0.2, g: 0.85, b: 1, a: 1}
+--- !u!4 &1067252263
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1067252261}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1991837942}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1068300766 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 44726334204825035, guid: 13214a2723927754cb40c0cb9af42890, type: 3}
@@ -4031,6 +4083,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
+--- !u!1001 &1420477055
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1991837942}
+    m_Modifications:
+    - target: {fileID: 7899230057561582542, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_Name
+      value: Ghost Wrench
+      objectReference: {fileID: 0}
+    - target: {fileID: 7899230057561582542, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+--- !u!4 &1420477056 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8317683801652514236, guid: 88d01f67fd03b5d4aae6eee8afa95cb5, type: 3}
+  m_PrefabInstance: {fileID: 1420477055}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1446914586
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4560,6 +4678,60 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b94cc446eee3d24ca0191f75ecc67ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EVTrainer.XR::EVTrainer.XR.BoltAdapter
+--- !u!1 &1667178856
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1667178858}
+  - component: {fileID: 1667178857}
+  m_Layer: 0
+  m_Name: Torque Ring
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1667178857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667178856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e6cce59ffcd1546813bb2b6e17cc0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EVTrainer.Rendering::EVTrainer.Rendering.TorqueRingView
+  _material: {fileID: 2100000, guid: 084bd7b93867d3549b9c7cbc32e52197, type: 2}
+  _innerRadius: 0.022
+  _outerRadius: 0.031
+  _zoneOverhang: 0.004
+  _trackColor: {r: 0.12, g: 0.13, b: 0.15, a: 1}
+  _zoneColor: {r: 0.1, g: 0.55, b: 0.2, a: 1}
+  _risingColor: {r: 1, g: 0.78, b: 0.15, a: 1}
+  _doneColor: {r: 0.3, g: 1, b: 0.4, a: 1}
+  _overColor: {r: 1, g: 0.2, b: 0.12, a: 1}
+  _checkHeight: 0.06
+--- !u!4 &1667178858
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667178856}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1991837942}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1701945463
 GameObject:
   m_ObjectHideFlags: 0
@@ -5576,7 +5748,10 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1420477056}
+  - {fileID: 1067252263}
+  - {fileID: 1667178858}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1991837943
@@ -5627,6 +5802,10 @@ MonoBehaviour:
   _boltHeadHeightMetres: 0.007
   _hapticStepDegrees: 4
   _minFloatHeightMetres: 0.92
+  _ghostWrench: {fileID: 1420477056}
+  _swingArrow: {fileID: 1067252262}
+  _torqueRing: {fileID: 1667178857}
+  _doneShowSeconds: 2.5
   _numberPrefab: {fileID: 8939873600690049485, guid: d6b1400d9f7cff94eb86340665a61e02, type: 3}
   _numberHeightMetres: 0.05
   _startedColor: {r: 0.95, g: 0.8, b: 0.15, a: 1}

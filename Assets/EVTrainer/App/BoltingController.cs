@@ -44,6 +44,14 @@ namespace EVTrainer.App
         [Tooltip("Let go below this height (the bench top), the wrench goes back to its stand instead of floating.")]
         [SerializeField] private float _minFloatHeightMetres = 0.92f;
 
+        [Header("Torque guidance (ghost wrench + arrow in Learn; progress ring in both modes)")]
+        [Tooltip("Scene object: the wrench as a ghost, shown seated on the next bolt in Learn.")]
+        [SerializeField] private Transform _ghostWrench;
+        [SerializeField] private SwingArrowView _swingArrow;
+        [SerializeField] private TorqueRingView _torqueRing;
+        [Tooltip("The finished bolt keeps its green (or red) ring this long after the wrench comes off.")]
+        [SerializeField, Min(0f)] private float _doneShowSeconds = 2.5f;
+
         [Header("Learn: pattern numbers")]
         [SerializeField] private FloatingNumberView _numberPrefab;
         [SerializeField, Min(0f)] private float _numberHeightMetres = 0.05f;
@@ -70,6 +78,8 @@ namespace EVTrainer.App
         private PartLabelView _tipLabel;
         private float _tipHideTime;
         private RatchetSwing _swing;
+        private string _doneHole;   // bolt just finished (its ring shows done for a moment)
+        private float _doneUntil;
         private ToolRelease? _wrenchRelease; // how the wrench was last let go (debug panel)
         private PartTint _wrenchTint;
         private bool _grabbableApplied;
@@ -166,7 +176,65 @@ namespace EVTrainer.App
             UpdateWrench();
             UpdateNumbers();
             UpdateGhosts();
+            UpdateGuidance();
             if (_tipLabel != null && Time.time > _tipHideTime) _tipLabel.Hide();
+        }
+
+        // ---------------- Torque guidance and progress ring ----------------
+
+        /// <summary>
+        /// Learn: a ghost wrench seated on the next bolt in the pattern (handle towards the trainee) and an arrow showing
+        /// the clockwise swing, both hidden while the real wrench is on a bolt. Both modes: a ring round the bolt being
+        /// torqued fills with torque up to the green target zone; it shows done (or over) for a moment afterwards.
+        /// </summary>
+        private void UpdateGuidance()
+        {
+            var set = Set;
+            bool torquing = Progress.AreBoltsAvailable(set) && set.AllSeated && !set.IsComplete;
+            string next = torquing && Learn && _wrenchHole == null ? set.NextInPattern : null;
+            if (next != null)
+            {
+                HolePose(set.Get(next).Spec, out var pos, out _, out var axis);
+                var toUser = TowardUser(pos, axis);
+                if (_ghostWrench != null)
+                {
+                    if (!_ghostWrench.gameObject.activeSelf) _ghostWrench.gameObject.SetActive(true);
+                    float mouthToOrigin = _wrench != null ? _wrench.MouthToOrigin : 0f;
+                    _ghostWrench.SetPositionAndRotation(pos + axis * mouthToOrigin, Quaternion.LookRotation(toUser, axis));
+                }
+                if (_swingArrow != null) _swingArrow.Show(pos, axis, toUser);
+            }
+            else
+            {
+                if (_ghostWrench != null && _ghostWrench.gameObject.activeSelf) _ghostWrench.gameObject.SetActive(false);
+                if (_swingArrow != null) _swingArrow.Hide();
+            }
+
+            if (_torqueRing == null) return;
+            string ringHole = _wrenchHole ?? (_doneHole != null && Time.time < _doneUntil ? _doneHole : null);
+            if (ringHole == null)
+            {
+                _torqueRing.Hide();
+                return;
+            }
+            var bolt = set.Get(ringHole);
+            HolePose(bolt.Spec, out var center, out _, out var boltAxis);
+            float scale = Data != null ? Data.torqueRingFullScale : TorqueDial.DefaultFullScaleFactor;
+            var (zoneStart, zoneEnd) = TorqueDial.Zone01(bolt.Spec, scale);
+            var look = bolt.State == BoltState.OverTorqued ? TorqueRingView.Look.Over
+                : bolt.State == BoltState.Torqued ? TorqueRingView.Look.Done
+                : TorqueRingView.Look.Rising;
+            _torqueRing.Show(center, boltAxis, TowardUser(center, boltAxis), TorqueDial.Fill01(bolt.Spec, bolt.TorqueNm, scale),
+                zoneStart, zoneEnd, look);
+        }
+
+        /// <summary>Direction in the bolt's plane from the bolt towards the trainee (where a handle naturally starts).</summary>
+        private static Vector3 TowardUser(Vector3 boltPosition, Vector3 axis)
+        {
+            var head = Camera.main != null ? Camera.main.transform.position : boltPosition + Vector3.back;
+            var dir = Vector3.ProjectOnPlane(head - boltPosition, axis);
+            if (dir.sqrMagnitude < 1e-6f) dir = Vector3.ProjectOnPlane(Vector3.back, axis);
+            return dir.normalized;
         }
 
         // ---------------- Learn: bolt ghosts ----------------
@@ -251,7 +319,10 @@ namespace EVTrainer.App
                 if (after != before) OnTorqueStateChanged(set, bolt, after);
                 if (bolt.IsFinished)
                 {
-                    // Done: the wrench comes off by itself and stays in the hand, ready for the next bolt.
+                    // Done: the wrench comes off by itself and stays in the hand, ready for the next bolt;
+                    // the ring stays a moment on the finished bolt (green with a check, or red).
+                    _doneHole = _wrenchHole;
+                    _doneUntil = Time.time + _doneShowSeconds;
                     Detach();
                     ShowGauge(set);
                     return;
@@ -435,8 +506,8 @@ namespace EVTrainer.App
                 var next = set.NextInPattern;
                 string msg;
                 if (set.IsComplete) msg = "All bolts torqued.";
-                else if (Learn) msg = $"Bolt {n} torqued ({bolt.TorqueNm:0.0} N·m). Next: bolt {set.Pattern.SequenceNumber(next)}.";
-                else msg = "Bolt torqued.";
+                else if (Learn) msg = $"Bolt {n} done ({bolt.TorqueNm:0.0} N·m). Next: bolt {set.Pattern.SequenceNumber(next)}.";
+                else msg = "Bolt done."; // Test: no hint about the next bolt
                 _training.ShowStatus(msg, good: true);
             }
             else if (state == BoltState.OverTorqued)

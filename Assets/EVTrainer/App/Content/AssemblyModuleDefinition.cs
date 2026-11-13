@@ -99,6 +99,8 @@ namespace EVTrainer.App
             [Min(0.02f)] public float wrenchDetachOffPlaneMetres = 0.15f;
             [Tooltip("Soft ratchet click every this many degrees of back-swing.")]
             [Min(1f)] public float ratchetClickDegrees = 6f;
+            [Tooltip("Torque ring: a full ring is this many times the upper torque limit.")]
+            [Min(1f)] public float torqueRingFullScale = 1.25f;
             [Header("Tools never fall")]
             [Tooltip("Let go further than this from the trainee's head, the wrench glides back to its stand instead of floating.")]
             [Min(0.2f)] public float toolFloatMaxDistanceMetres = 1f;

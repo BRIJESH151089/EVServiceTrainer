@@ -273,6 +273,7 @@ MonoBehaviour:
     wrenchAttachMaxTiltDegrees: 45
     wrenchDetachOffPlaneMetres: 0.15
     ratchetClickDegrees: 6
+    torqueRingFullScale: 1.25
     toolFloatMaxDistanceMetres: 1
     toolReturnSeconds: 0.6
     boltName: Cover bolt
