@@ -95,6 +95,7 @@ namespace EVTrainer.App
         private AssemblyProgress Progress => _training != null ? _training.Progress : null;
         private BoltSet Set => Progress != null && Progress.BoltSets.Count > 0 ? Progress.BoltSets[0] : null;
         private bool Learn => Progress != null && Progress.Mode == TrainingMode.Learn;
+        private HapticProfiles Haptics => _training != null ? _training.Haptics : HapticProfiles.Default;
         private AssemblyModuleDefinition.BoltSetEntry Data => _module != null && _module.BoltSets.Count > 0 ? _module.BoltSets[0] : null;
 
         private void Awake()
@@ -279,7 +280,7 @@ namespace EVTrainer.App
                 {
                     _refusedHole = hole;
                     _training.PlaySound(FeedbackCue.Reject, _wrench.SocketMouth);
-                    _wrench.Pulse(0.8f, 0.15f);
+                    _wrench.Pulse(Haptics.ForCue(FeedbackCue.Reject));
                     _training.ShowStatus(Learn ? check.Reason : "Cannot torque this bolt yet.", good: false);
                     _training.NotifyProgressChanged(); // a logged mistake shows on the debug panel
                     ShowGauge(set);
@@ -328,7 +329,7 @@ namespace EVTrainer.App
             if (step.BackClicks > 0)
             {
                 _training.PlaySound(FeedbackCue.RatchetBack, headTop);
-                _wrench.Pulse(0.05f, 0.01f);
+                _wrench.Pulse(Haptics.ForCue(FeedbackCue.RatchetBack));
             }
             ShowGauge(set);
         }
@@ -376,7 +377,7 @@ namespace EVTrainer.App
             _lastHandleAngle = first.HasAngle ? first.HandleAngleDegrees : AngleOfWrenchHandle(axis);
             _wrench.SetAttached(true);
             PoseAttachedWrench(holePos, axis);
-            _wrench.Pulse(0.4f, 0.05f);
+            _wrench.Pulse(Haptics.ForCue(FeedbackCue.WrenchAttach));
             _training.PlaySound(FeedbackCue.WrenchAttach, holePos);
             var bolt = set.Get(hole);
             int n = set.Pattern.SequenceNumber(hole);
@@ -435,6 +436,7 @@ namespace EVTrainer.App
         {
             _wrenchRelease = null;
             _training.PlaySound(FeedbackCue.PickUp, wrench.transform.position);
+            wrench.Pulse(Haptics.ForCue(FeedbackCue.PickUp));
             if (_wrenchHole != null && Set != null) _swing = new RatchetSwing(Set.Spec.Wrench);
         }
 
@@ -487,8 +489,7 @@ namespace EVTrainer.App
             _hapticAccumulator += delta;
             if (_hapticAccumulator < _hapticStepDegrees) return;
             _hapticAccumulator = 0f;
-            float k = Mathf.Clamp01(bolt.TorqueNm / bolt.Spec.TorqueSpecNm);
-            _wrench.Pulse(Mathf.Lerp(0.05f, 0.45f, k * k), 0.02f);
+            _wrench.Pulse(Haptics.TorqueRamp(bolt.TorqueNm, bolt.Spec.TorqueSpecNm));
         }
 
         private void OnTorqueStateChanged(BoltSet set, BoltTightening bolt, BoltState state)
@@ -496,7 +497,7 @@ namespace EVTrainer.App
             int n = set.Pattern.SequenceNumber(bolt.Spec.HoleId);
             if (state == BoltState.Torqued)
             {
-                _wrench.Pulse(1f, set.AutoDetachWhenFinished ? 0.12f : 0.3f); // Test: a strong buzz says "stop and lift off"
+                _wrench.Pulse(Haptics.TorqueClick(wrenchStaysOn: !set.AutoDetachWhenFinished)); // Test: longer, "stop and lift off"
                 _training.PlaySound(FeedbackCue.TorqueClick, _wrench.SocketMouth);
                 var next = set.NextInPattern;
                 string msg;
@@ -508,7 +509,7 @@ namespace EVTrainer.App
             else if (state == BoltState.OverTorqued)
             {
                 _training.PlaySound(FeedbackCue.OverTorque, _wrench.SocketMouth);
-                _wrench.Pulse(1f, 0.4f);
+                _wrench.Pulse(Haptics.ForCue(FeedbackCue.OverTorque));
                 _training.ShowStatus(Learn
                     ? $"Over-torqued: bolt {n} at {bolt.TorqueNm:0.0} N·m (max {bolt.Spec.MaxTorqueNm:0.0}). Stop at the click."
                     : "Over-torqued.", good: false);
@@ -584,6 +585,7 @@ namespace EVTrainer.App
                         {
                             rt.ThreadTickDegrees = 0f;
                             _training.PlaySound(FeedbackCue.BoltThreadTick, holePos);
+                            rt.Adapter.Pulse(Haptics.ForCue(FeedbackCue.BoltThreadTick));
                         }
                     }
                     PlaceThreaded(rt, bolt, holePos, holeRot, axis);
@@ -671,7 +673,7 @@ namespace EVTrainer.App
         private void OnSeated(BoltRuntime rt, BoltSet set)
         {
             _training.PlaySound(FeedbackCue.BoltSeated, rt.Adapter.transform.position);
-            rt.Adapter.Pulse(0.5f, 0.08f);
+            rt.Adapter.Pulse(Haptics.ForCue(FeedbackCue.BoltSeated));
             rt.Adapter.ForceRelease();
             rt.Adapter.SetGrabbable(false); // finger-tight: only the wrench works on it now
             int n = set.Pattern.SequenceNumber(rt.Hole);
@@ -699,6 +701,7 @@ namespace EVTrainer.App
         private void OnBoltGrabbed(BoltAdapter adapter)
         {
             _training.PlaySound(FeedbackCue.PickUp, adapter.transform.position);
+            adapter.Pulse(Haptics.ForCue(FeedbackCue.PickUp));
             if (!_byAdapter.TryGetValue(adapter, out var rt) || rt.Hole == null) return;
             // Picking a started or jammed bolt up again: it stays in its hole; twisting continues from here.
             adapter.SetTracking(false, false);

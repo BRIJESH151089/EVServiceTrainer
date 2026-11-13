@@ -25,17 +25,15 @@ namespace EVTrainer.App
         [Header("Feedback")]
         [Tooltip("Self-made sound set: workshop sounds at the source (3D), interface sounds 2D.")]
         [SerializeField] private FeedbackAudio _audio;
+        [Tooltip("Controller haptic profiles (data). Empty = the Core defaults.")]
+        [SerializeField] private HapticProfileAsset _haptics;
 
         [Header("Snap")]
         [SerializeField, Min(0f)] private float _snapSeconds = 0.15f;
-        [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.6f;
-        [SerializeField, Min(0f)] private float _hapticSeconds = 0.08f;
 
         [Header("Wrong order")]
         [Tooltip("Time to carry a wrong-order part back to its staging position.")]
         [SerializeField, Min(0f)] private float _returnSeconds = 0.5f;
-        [SerializeField, Range(0f, 1f)] private float _rejectHapticAmplitude = 1f;
-        [SerializeField, Min(0f)] private float _rejectHapticSeconds = 0.25f;
 
         [Header("Settle re-check (part dropped just above its seat)")]
         [SerializeField, Min(0f)] private float _settleMaxHeightMetres = SettleRetryRule.DefaultMaxHeightAboveTargetMetres;
@@ -85,8 +83,15 @@ namespace EVTrainer.App
         public AssemblyProgress Progress { get; private set; }
         public InstallResult? LastResult { get; private set; }
 
+        /// <summary>Haptic profiles for every controller pulse in the run.</summary>
+        public HapticProfiles Haptics { get; private set; } = HapticProfiles.Default;
+
         private void Awake()
         {
+            if (_haptics != null) Haptics = _haptics.ToCore();
+            foreach (var button in FindObjectsByType<PokeButtonInput>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                button.ClickPulse = Haptics.ForCue(FeedbackCue.UiPress);
+
             _definition = _module.ToCore(_assemblyOrigin);
             foreach (var part in _parts)
             {
@@ -271,7 +276,11 @@ namespace EVTrainer.App
             if (_restartButton != null) _restartButton.Clicked -= OnRestartRequested;
         }
 
-        private void OnPartGrabbed(GrabbablePartAdapter part) => PlaySound(FeedbackCue.PickUp, part.transform.position);
+        private void OnPartGrabbed(GrabbablePartAdapter part)
+        {
+            PlaySound(FeedbackCue.PickUp, part.transform.position);
+            part.PulseLastController(Haptics.ForCue(FeedbackCue.PickUp));
+        }
 
         private void OnSecondHandNeeded(GrabbablePartAdapter part)
         {
@@ -333,7 +342,7 @@ namespace EVTrainer.App
             if (result.IsInstalled)
             {
                 part.LockAt(result.SnapPose, _snapSeconds);
-                part.PulseReleasingController(_hapticAmplitude, _hapticSeconds);
+                part.PulseLastController(Haptics.ForCue(FeedbackCue.Snap));
                 PlaySound(FeedbackCue.Snap, result.SnapPose.Position.ToUnity());
                 var feedback = part.GetComponent<SnapFeedback>();
                 if (feedback != null) feedback.PlayInstalled();
@@ -344,12 +353,13 @@ namespace EVTrainer.App
                 // Not allowed yet: the part goes back where it came from, with a strong buzz.
                 PlaySound(FeedbackCue.Reject, part.transform.position);
                 part.ReturnToStaging(_returnSeconds);
-                part.PulseReleasingController(_rejectHapticAmplitude, _rejectHapticSeconds);
+                part.PulseLastController(Haptics.ForCue(FeedbackCue.Reject));
             }
             else if (result.Outcome == InstallOutcome.WrongOrientation && Progress.Mode == TrainingMode.Learn)
             {
                 // Learn: turned the wrong way is pointed out (its ghost flashes red); Test leaves it loose, silently.
                 PlaySound(FeedbackCue.Reject, part.transform.position);
+                part.PulseLastController(Haptics.ForCue(FeedbackCue.Reject));
             }
             // Learn: a rejected release (wrong order, or turned the wrong way) flashes that slot's ghost red.
             if ((result.Outcome == InstallOutcome.WrongOrder || result.Outcome == InstallOutcome.WrongOrientation) && _ghosts != null)

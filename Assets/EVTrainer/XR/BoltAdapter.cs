@@ -1,7 +1,7 @@
 using System;
+using EVTrainer.Core;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -136,11 +136,6 @@ namespace EVTrainer.XR
         }
 
         /// <summary>Haptic pulse on the holding controller (hands have none).</summary>
-        public void Pulse(float amplitude, float duration)
-        {
-            if (_interactor == null || HeldByHand) return;
-            var player = _interactor.transform.GetComponentInParent<HapticImpulsePlayer>();
-            if (player != null) player.SendHapticImpulse(amplitude, duration);
-        }
+        public void Pulse(HapticPulse pulse) => HapticOutput.Send(_interactor, pulse);
     }
 }

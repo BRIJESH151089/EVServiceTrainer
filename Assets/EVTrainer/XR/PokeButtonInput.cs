@@ -1,7 +1,6 @@
 using EVTrainer.Core;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -18,10 +17,10 @@ namespace EVTrainer.XR
     {
         [Tooltip("Cap travel in metres (same as the view's).")]
         [SerializeField, Min(0.001f)] private float _travel = 0.009f;
-        [SerializeField, Range(0f, 1f)] private float _hapticAmplitude = 0.35f;
-        [SerializeField, Min(0f)] private float _hapticSeconds = 0.04f;
-
         private XRSimpleInteractable _interactable;
+
+        /// <summary>Pulse on the pressing controller (set by the composition root from the haptic profiles).</summary>
+        public HapticPulse ClickPulse { get; set; } = HapticProfiles.Default.ForCue(FeedbackCue.UiPress);
         private IXRInteractor _lastPresser;
 
         private void Awake()
@@ -58,12 +57,6 @@ namespace EVTrainer.XR
             }
         }
 
-        public void NotifyClicked()
-        {
-            if (_lastPresser == null || _lastPresser.transform == null) return;
-            if (_lastPresser.transform.GetComponentInParent<HandTrackingAdapter>() != null) return; // hands: no haptics
-            var player = _lastPresser.transform.GetComponentInParent<HapticImpulsePlayer>();
-            if (player != null) player.SendHapticImpulse(_hapticAmplitude, _hapticSeconds);
-        }
+        public void NotifyClicked() => HapticOutput.Send(_lastPresser, ClickPulse);
     }
 }

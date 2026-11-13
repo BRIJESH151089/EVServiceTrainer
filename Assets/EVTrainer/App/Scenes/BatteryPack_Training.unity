@@ -7252,12 +7252,9 @@ MonoBehaviour:
   - {fileID: 1446914588}
   _ghosts: {fileID: 2054863773}
   _audio: {fileID: 1291303160}
+  _haptics: {fileID: 11400000, guid: 964c3545dc503254a8917d53321c70af, type: 2}
   _snapSeconds: 0.25
-  _hapticAmplitude: 0.6
-  _hapticSeconds: 0.08
   _returnSeconds: 0.5
-  _rejectHapticAmplitude: 1
-  _rejectHapticSeconds: 0.25
   _settleMaxHeightMetres: 0.06
   _settleMinSeconds: 0.15
   _settleMaxSeconds: 1

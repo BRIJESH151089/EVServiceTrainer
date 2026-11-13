@@ -4,7 +4,6 @@ using EVTrainer.Core;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit;
-using UnityEngine.XR.Interaction.Toolkit.Inputs.Haptics;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -226,13 +225,8 @@ namespace EVTrainer.XR
                 && _rigidbody.angularVelocity.magnitude <= maxAngularSpeed;
         }
 
-        /// <summary>Haptic pulse on the controller that last released this part. Hands have no haptics.</summary>
-        public void PulseReleasingController(float amplitude, float duration)
-        {
-            if (_lastInteractor == null || SourceOf(_lastInteractor) != InputSource.Controller) return;
-            var player = _lastInteractor.transform.GetComponentInParent<HapticImpulsePlayer>();
-            if (player != null) player.SendHapticImpulse(amplitude, duration);
-        }
+        /// <summary>Haptic pulse on the controller that last grabbed or released this part. Hands have no haptics.</summary>
+        public void PulseLastController(HapticPulse pulse) => HapticOutput.Send(_lastInteractor, pulse);
 
         /// <summary>
         /// Moves the part smoothly onto <paramref name="target"/> over <paramref name="duration"/> seconds
