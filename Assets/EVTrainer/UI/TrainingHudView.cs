@@ -108,6 +108,11 @@ namespace EVTrainer.UI
             return $"Step {n} of {total}";
         }
 
+        // Step state icons (self-made TMP sprite asset on the Steps text): green check, amber arrow, grey ring.
+        private const string Done = "<sprite name=\"done\">  ";
+        private const string Current = "<sprite name=\"current\">  ";
+        private const string Pending = "<sprite name=\"pending\">  ";
+
         private string BuildStepList(AssemblyProgress progress)
         {
             // One line per step; steps with several identical parts show a count, e.g. "Install battery modules (2/4)".
@@ -121,7 +126,7 @@ namespace EVTrainer.UI
                 {
                     if (!progress.IsStepComplete(step)) continue;
                     string done = step.Size > 1 ? $"{step.Instruction} ({step.Size}/{step.Size})" : step.Instruction;
-                    _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(done).Append("</color>\n");
+                    _sb.Append("<color=").Append(DoneColor).Append(">" + Done).Append(done).Append("</color>\n");
                 }
                 _sb.Append("<color=").Append(CurrentColor).Append("><b>").Append(StepCounter(progress)).Append("</b></color>");
                 return _sb.ToString();
@@ -135,11 +140,11 @@ namespace EVTrainer.UI
                 string text = step.Size > 1 ? $"{step.Instruction} ({done}/{step.Size})" : step.Instruction;
 
                 if (complete)
-                    _sb.Append("<color=").Append(DoneColor).Append(">[x]  ").Append(text).Append("</color>");
+                    _sb.Append("<color=").Append(DoneColor).Append(">" + Done).Append(text).Append("</color>");
                 else if (step == current)
-                    _sb.Append("<color=").Append(CurrentColor).Append("><b>></b>    <b>").Append(text).Append("</b></color>");
+                    _sb.Append("<color=").Append(CurrentColor).Append(">" + Current + "<b>").Append(text).Append("</b></color>");
                 else
-                    _sb.Append("<color=").Append(PendingColor).Append(">[  ]  ").Append(text).Append("</color>");
+                    _sb.Append("<color=").Append(PendingColor).Append(">" + Pending).Append(text).Append("</color>");
                 if (i < steps.Count - 1) _sb.Append('\n');
             }
             return _sb.ToString();
