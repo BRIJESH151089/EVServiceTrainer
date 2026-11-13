@@ -162,13 +162,20 @@ namespace EVTrainer.App
             foreach (var part in _parts) part.SetGrabbable(false);
             SetRunUiVisible(false);
             _startPanel.Show(_definition.Title);
+            if (_hud != null)
+            {
+                // The read-only info panel is always up: steps preview, neutral badge, where to choose.
+                _hud.Render(Progress, null);
+                _hud.ShowModeNotChosen();
+                _hud.ShowNotice("Choose Learn or Test on the button bar (front-left of the bench).", warning: false);
+            }
             RefreshGhosts();
             Debug.Log($"[EVTrainer] Waiting for mode selection ({_definition.Title}); parts locked until then.");
         }
 
+        /// <summary>Restart only appears once a run has started (the info panel is always shown).</summary>
         private void SetRunUiVisible(bool visible)
         {
-            if (_hud != null) _hud.gameObject.SetActive(visible);
             if (_restartButton != null) _restartButton.gameObject.SetActive(visible);
         }
 
