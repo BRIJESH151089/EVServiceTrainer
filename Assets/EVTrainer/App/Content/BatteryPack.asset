@@ -260,6 +260,7 @@ MonoBehaviour:
     torqueToleranceNm: 0.4
     stiffnessNmPerDegree: 0.1
     maxStartTiltDegrees: 10
+    handTurnGearing: 4
     wrenchAttachRadiusMetres: 0.03
     wrenchAttachMaxAboveMetres: 0.04
     wrenchAttachMaxBelowMetres: 0.03
@@ -267,6 +268,6 @@ MonoBehaviour:
     wrenchDetachOffPlaneMetres: 0.15
     ratchetClickDegrees: 6
     boltName: Cover bolt
-    boltHint: Hold it straight over a hole, twist clockwise 3 turns
+    boltHint: Let go upright over a hole, then twist it clockwise
     wrenchName: Torque wrench
     wrenchHint: "Fit on a seated bolt, swing clockwise to 8 N\xB7m"

@@ -75,6 +75,8 @@ namespace EVTrainer.App
             [Min(0f)] public float torqueToleranceNm = 0.4f;
             [Min(0.001f)] public float stiffnessNmPerDegree = 0.1f;
             [Range(0f, 45f)] public float maxStartTiltDegrees = 10f;
+            [Tooltip("Bolt degrees per degree of wrist twist when threading by hand.")]
+            [Min(0.1f)] public float handTurnGearing = 4f;
             [Header("Torque wrench")]
             [Tooltip("The socket mouth attaches within this distance of the bolt axis...")]
             [Min(0.005f)] public float wrenchAttachRadiusMetres = 0.03f;
@@ -147,7 +149,8 @@ namespace EVTrainer.App
                     var position = basePosition + baseRotation * h.localPosition;
                     var rotation = baseRotation * Quaternion.Euler(h.localEulerAngles);
                     bolts.Add(new BoltSpec(h.id, new PartPose(position.ToNumerics(), rotation.ToNumerics()),
-                        s.threadTurnsToSeat, s.torqueSpecNm, s.torqueToleranceNm, s.stiffnessNmPerDegree, s.maxStartTiltDegrees));
+                        s.threadTurnsToSeat, s.torqueSpecNm, s.torqueToleranceNm, s.stiffnessNmPerDegree, s.maxStartTiltDegrees,
+                        s.handTurnGearing));
                 }
                 sets.Add(new BoltSetSpec(s.id, string.IsNullOrEmpty(s.prerequisitePartId) ? null : s.prerequisitePartId,
                     bolts, s.patternOrder, s.handStartInstruction, s.torqueInstruction, s.groupName,

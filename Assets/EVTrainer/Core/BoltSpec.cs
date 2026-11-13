@@ -13,7 +13,8 @@ namespace EVTrainer.Core
             float torqueSpecNm = 8f,
             float torqueToleranceNm = 0.4f,
             float stiffnessNmPerDegree = 0.1f,
-            float maxStartTiltDegrees = 10f)
+            float maxStartTiltDegrees = 10f,
+            float handTurnGearing = 1f)
         {
             if (string.IsNullOrWhiteSpace(holeId)) throw new ArgumentException("Hole id is required.", nameof(holeId));
             if (threadTurnsToSeat <= 0f) throw new ArgumentOutOfRangeException(nameof(threadTurnsToSeat));
@@ -21,6 +22,7 @@ namespace EVTrainer.Core
             if (torqueToleranceNm < 0f || torqueToleranceNm >= torqueSpecNm) throw new ArgumentOutOfRangeException(nameof(torqueToleranceNm));
             if (stiffnessNmPerDegree <= 0f) throw new ArgumentOutOfRangeException(nameof(stiffnessNmPerDegree));
             if (maxStartTiltDegrees < 0f || maxStartTiltDegrees > 90f) throw new ArgumentOutOfRangeException(nameof(maxStartTiltDegrees));
+            if (handTurnGearing <= 0f) throw new ArgumentOutOfRangeException(nameof(handTurnGearing));
 
             HoleId = holeId;
             HolePose = holePose;
@@ -29,6 +31,7 @@ namespace EVTrainer.Core
             TorqueToleranceNm = torqueToleranceNm;
             StiffnessNmPerDegree = stiffnessNmPerDegree;
             MaxStartTiltDegrees = maxStartTiltDegrees;
+            HandTurnGearing = handTurnGearing;
         }
 
         public string HoleId { get; }
@@ -47,6 +50,9 @@ namespace EVTrainer.Core
 
         /// <summary>Starting the thread with more tilt than this cross-threads the bolt.</summary>
         public float MaxStartTiltDegrees { get; }
+
+        /// <summary>Bolt degrees per degree of wrist twist when turning by hand (4 = three turns in about two twists).</summary>
+        public float HandTurnGearing { get; }
 
         public float MinTorqueNm => TorqueSpecNm - TorqueToleranceNm;
         public float MaxTorqueNm => TorqueSpecNm + TorqueToleranceNm;

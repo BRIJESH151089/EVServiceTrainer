@@ -54,8 +54,21 @@ namespace EVTrainer.Core
         public static bool IsCrossThreaded(float tiltDegrees, float maxStartTiltDegrees) => tiltDegrees > maxStartTiltDegrees;
 
         /// <summary>
-        /// Turning by hand. The first clockwise twist checks the tilt (cross-thread check); afterwards each degree
-        /// threads the bolt down until it is seated. A hand cannot torque: turns past seating are ignored.
+        /// The bolt is dropped into its hole. Straight enough (tilt within <see cref="BoltSpec.MaxStartTiltDegrees"/>):
+        /// the thread catches and it is Started with no turns yet. More tilt: it sits crooked, CrossThreaded.
+        /// Only a loose bolt can be dropped in.
+        /// </summary>
+        public BoltState DropIn(float tiltDegrees)
+        {
+            if (State != BoltState.Loose) return State;
+            State = IsCrossThreaded(tiltDegrees, Spec.MaxStartTiltDegrees) ? BoltState.CrossThreaded : BoltState.Started;
+            return State;
+        }
+
+        /// <summary>
+        /// Turning by hand (wrist degrees, geared by <see cref="BoltSpec.HandTurnGearing"/>). On a loose bolt the first
+        /// clockwise twist checks the tilt (cross-thread check); afterwards each degree threads the bolt down until it
+        /// is seated. A hand cannot torque: turns past seating are ignored.
         /// </summary>
         public BoltState HandTurn(float deltaDegrees, float tiltDegrees)
         {
@@ -69,7 +82,7 @@ namespace EVTrainer.Core
                 }
                 State = BoltState.Started;
             }
-            if (State == BoltState.Started) Thread(deltaDegrees);
+            if (State == BoltState.Started) Thread(deltaDegrees * Spec.HandTurnGearing);
             return State;
         }
 

@@ -113,6 +113,45 @@ namespace EVTrainer.Core
             return best;
         }
 
+        /// <summary>
+        /// Hole a released bolt drops into: the nearest empty hole within <paramref name="zone"/>'s distance of the
+        /// bolt (measured to the hole centre on the surface) whose axis the bolt is within the zone's angle of.
+        /// Null if none (the bolt just falls).
+        /// </summary>
+        public string FindDropHole(Vector3 boltPosition, Vector3 boltAxis, CaptureZone zone)
+        {
+            string best = null;
+            float bestDist = float.MaxValue;
+            foreach (var b in _bolts)
+            {
+                if (_occupied.Contains(b.Spec.HoleId)) continue;
+                float d = Vector3.Distance(boltPosition, b.Spec.HolePose.Position);
+                if (d > zone.PositionMetres || d >= bestDist) continue;
+                if (TiltDegrees(b.Spec.HoleId, boltAxis) > zone.AngleDegrees) continue;
+                best = b.Spec.HoleId;
+                bestDist = d;
+            }
+            return best;
+        }
+
+        /// <summary>Angle between a bolt's axis and the hole's axis (degrees).</summary>
+        public float TiltDegrees(string holeId, Vector3 boltAxis) =>
+            AxisAngle.AngleBetween(boltAxis, Vector3.Transform(Vector3.UnitY, Get(holeId).Spec.HolePose.Rotation));
+
+        /// <summary>
+        /// A released bolt drops into <paramref name="holeId"/>: Started when straight enough, otherwise it sits
+        /// crooked, CrossThreaded (logged).
+        /// </summary>
+        public BoltState DropIn(string holeId, float tiltDegrees, double timeSeconds)
+        {
+            var bolt = Get(holeId);
+            if (_occupied.Contains(holeId)) return bolt.State;
+            _occupied.Add(holeId);
+            var state = bolt.DropIn(tiltDegrees);
+            if (state == BoltState.CrossThreaded) LogCrossThread(bolt, holeId, tiltDegrees, timeSeconds);
+            return state;
+        }
+
         /// <summary>A bolt is put into the hole (not yet turned).</summary>
         public void Insert(string holeId)
         {
@@ -135,10 +174,13 @@ namespace EVTrainer.Core
             var before = bolt.State;
             var after = bolt.HandTurn(deltaDegrees, tiltDegrees);
             if (after == BoltState.CrossThreaded && before != BoltState.CrossThreaded)
-                _log.Record(new MistakeEntry(timeSeconds, MistakeKind.CrossThread, MistakeTypeId, holeId, holeId,
-                    $"Bolt started at {tiltDegrees:0} deg tilt (max {bolt.Spec.MaxStartTiltDegrees:0} deg): cross-threaded."));
+                LogCrossThread(bolt, holeId, tiltDegrees, timeSeconds);
             return after;
         }
+
+        private void LogCrossThread(BoltTightening bolt, string holeId, float tiltDegrees, double timeSeconds) =>
+            _log.Record(new MistakeEntry(timeSeconds, MistakeKind.CrossThread, MistakeTypeId, holeId, holeId,
+                $"Bolt started at {tiltDegrees:0} deg tilt (max {bolt.Spec.MaxStartTiltDegrees:0} deg): cross-threaded."));
 
         /// <summary>
         /// The wrench socket meets the bolt in <paramref name="holeId"/>. Checks the bolt is seated, that every bolt is

@@ -19,12 +19,12 @@ namespace EVTrainer.App
         [SerializeField] private AssemblyModuleDefinition _module;
         [SerializeField] private BoltAdapter[] _bolts;
 
-        [Header("Hand-start")]
-        [Tooltip("A held bolt within this distance of a free hole's axis snaps onto it.")]
-        [SerializeField, Min(0.001f)] private float _captureRadiusMetres = 0.02f;
-        [SerializeField, Min(0.001f)] private float _captureHeightMetres = 0.06f;
-        [Tooltip("More tilt than this and the bolt does not enter the hole at all.")]
-        [SerializeField, Range(0f, 45f)] private float _maxEntryTiltDegrees = 20f;
+        [Header("Hand-start (drop-in distance and angle: the module's capture zone)")]
+        [Tooltip("Bolt origin (under the head) to the shank tip; the drop-in distance is measured from the tip.")]
+        [SerializeField, Min(0f)] private float _shankLengthMetres = 0.025f;
+        [Tooltip("Learn: upright ghost bolt shown in every free hole.")]
+        [SerializeField] private PartTint _boltGhostPrefab;
+        [SerializeField] private Color _ghostReadyColor = new Color(0.25f, 1f, 0.4f, 0.5f);
         [Tooltip("Height of the bolt head above the surface when the thread first engages.")]
         [SerializeField, Min(0f)] private float _engageHeightMetres = 0.012f;
         [Tooltip("Pulling the hand this far from a jammed (or just inserted) bolt takes it out of the hole.")]
@@ -60,6 +60,8 @@ namespace EVTrainer.App
         private readonly List<BoltRuntime> _runtimes = new List<BoltRuntime>();
         private readonly Dictionary<BoltAdapter, BoltRuntime> _byAdapter = new Dictionary<BoltAdapter, BoltRuntime>();
         private readonly Dictionary<string, FloatingNumberView> _numbers = new Dictionary<string, FloatingNumberView>();
+        private readonly Dictionary<string, PartTint> _ghosts = new Dictionary<string, PartTint>();
+        private string _readyHole; // free hole a held bolt would drop into (its ghost turns green)
         private RatchetSwing _swing;
         private bool _grabbableApplied;
         private bool _grabbable;
@@ -130,6 +132,7 @@ namespace EVTrainer.App
             }
             if (!running || Set == null) return;
 
+            _readyHole = null;
             foreach (var rt in _runtimes)
             {
                 if (rt.Adapter.IsHeld) UpdateHeldBolt(rt);
@@ -137,6 +140,31 @@ namespace EVTrainer.App
             }
             UpdateWrench();
             UpdateNumbers();
+            UpdateGhosts();
+        }
+
+        // ---------------- Learn: bolt ghosts ----------------
+
+        private void UpdateGhosts()
+        {
+            if (_boltGhostPrefab == null) return;
+            var set = Set;
+            bool show = Learn && Progress.AreBoltsAvailable(set);
+            foreach (var bolt in set.Bolts)
+            {
+                var hole = bolt.Spec.HoleId;
+                bool visible = show && !set.IsOccupied(hole);
+                if (!_ghosts.TryGetValue(hole, out var ghost))
+                {
+                    if (!visible) continue;
+                    HolePose(bolt.Spec, out var pos, out var rot, out var axis);
+                    ghost = Instantiate(_boltGhostPrefab, pos + axis * _engageHeightMetres, rot, transform);
+                    ghost.name = "Bolt Ghost " + hole;
+                    _ghosts[hole] = ghost;
+                }
+                if (ghost.gameObject.activeSelf != visible) ghost.gameObject.SetActive(visible);
+                if (visible) ghost.SetTint(hole == _readyHole ? _ghostReadyColor : (Color?)null);
+            }
         }
 
         // ---------------- Torque wrench ----------------
@@ -394,51 +422,26 @@ namespace EVTrainer.App
             var set = Set;
             if (!Progress.AreBoltsAvailable(set)) return;
 
-            if (rt.Hole == null && !TryCapture(rt, set)) return;
+            if (rt.Hole == null)
+            {
+                // Carried freely: the hole it would drop into if let go now (its Learn ghost turns green).
+                var hole = DropHoleFor(rt, set);
+                if (hole != null) _readyHole = hole;
+                return;
+            }
 
             var bolt = set.Get(rt.Hole);
             HolePose(bolt.Spec, out var holePos, out var holeRot, out var axis);
-            var virtualRot = rt.Adapter.VirtualRotation;
-            float tilt = Vector3.Angle(virtualRot * Vector3.up, axis);
-
             switch (bolt.State)
             {
-                case BoltState.Loose:
-                    if (tilt > _maxEntryTiltDegrees || PulledOut(rt))
-                    {
-                        TakeOut(rt, set, message: null);
-                        return;
-                    }
-                    rt.Adapter.SetPosition(holePos + axis * _engageHeightMetres); // on the axis; tilt follows the hand
-                    float firstTwist = rt.Tracker.Update(axis.ToNumerics(), (virtualRot * Vector3.forward).ToNumerics());
-                    if (firstTwist <= 0f) return;
-                    var state = set.HandTurn(rt.Hole, firstTwist, tilt, _training.RunTime);
-                    if (state == BoltState.CrossThreaded)
-                    {
-                        rt.Adapter.SetTracking(false, false); // jammed at its crooked angle
-                        rt.Adapter.SetLockedInPlace(true);
-                        rt.Adapter.Pulse(0.9f, 0.25f);
-                        _training.ShowStatus(Learn
-                            ? $"Cross-threaded: the bolt started {tilt:0}° off straight (max {bolt.Spec.MaxStartTiltDegrees:0}°). Pull it out and start it again, straight."
-                            : "Bolt jammed: cross-threaded.", good: false);
-                        _training.NotifyProgressChanged();
-                    }
-                    else if (state == BoltState.Started)
-                    {
-                        rt.Adapter.SetTracking(false, false); // the thread now holds it straight
-                        rt.Adapter.SetLockedInPlace(true);
-                        rt.SpinDegrees = firstTwist;
-                        PlaceThreaded(rt, bolt, holePos, holeRot, axis);
-                        if (Learn) _training.ShowStatus($"Thread caught. Keep twisting clockwise ({bolt.Spec.ThreadTurnsToSeat:0} turns).", good: true);
-                    }
-                    return;
-
                 case BoltState.Started:
+                    // Twisting the bolt in its hole: wrist degrees about the hole axis, geared in Core.
+                    var virtualRot = rt.Adapter.VirtualRotation;
                     float twist = rt.Tracker.Update(axis.ToNumerics(), (virtualRot * Vector3.forward).ToNumerics());
                     if (twist > 0f)
                     {
-                        rt.SpinDegrees += twist;
-                        set.HandTurn(rt.Hole, twist, tilt, _training.RunTime);
+                        rt.SpinDegrees += twist * bolt.Spec.HandTurnGearing;
+                        set.HandTurn(rt.Hole, twist, 0f, _training.RunTime);
                     }
                     PlaceThreaded(rt, bolt, holePos, holeRot, axis);
                     if (bolt.State == BoltState.Seated) OnSeated(rt, set);
@@ -446,24 +449,58 @@ namespace EVTrainer.App
 
                 case BoltState.CrossThreaded:
                     if (PulledOut(rt))
-                        TakeOut(rt, set, Learn ? "Bolt removed. Start it again, straight over the hole." : null);
+                        TakeOut(rt, set, Learn ? "Bolt removed. Drop it in again, upright over the hole." : null);
                     return;
             }
         }
 
-        private bool TryCapture(BoltRuntime rt, BoltSet set)
+        /// <summary>Free hole within the mode's capture zone of the bolt's shank tip and axis, or null.</summary>
+        private string DropHoleFor(BoltRuntime rt, BoltSet set)
         {
-            var hole = set.FindFreeHole(rt.Adapter.transform.position.ToNumerics(), _captureRadiusMetres, _captureHeightMetres);
-            if (hole == null) return false;
-            HolePose(set.Get(hole).Spec, out _, out _, out var axis);
-            if (Vector3.Angle(rt.Adapter.VirtualRotation * Vector3.up, axis) > _maxEntryTiltDegrees) return false; // too crooked to enter
-            set.Insert(hole);
+            var t = rt.Adapter.transform;
+            var tip = t.position - t.up * _shankLengthMetres;
+            return set.FindDropHole(tip.ToNumerics(), t.up.ToNumerics(), Progress.CaptureZone);
+        }
+
+        /// <summary>
+        /// A free bolt let go near a hole drops in: straight enough it stands upright, Started (twist to thread);
+        /// more tilted it sits crooked, cross-threaded (pull it out). Otherwise it just falls.
+        /// </summary>
+        private void TryDropIn(BoltRuntime rt, BoltSet set)
+        {
+            if (!Progress.AreBoltsAvailable(set)) return;
+            var hole = DropHoleFor(rt, set);
+            if (hole == null) return;
+
+            float tilt = set.TiltDegrees(hole, rt.Adapter.transform.up.ToNumerics());
+            var state = set.DropIn(hole, tilt, _training.RunTime);
             rt.Hole = hole;
             rt.SpinDegrees = 0f;
             rt.Tracker.Reset();
-            rt.Adapter.SetTracking(false, true); // position pinned to the hole axis, tilt still follows the hand
-            return true;
+            rt.Adapter.SetLockedInPlace(true);
+            var bolt = set.Get(hole);
+            HolePose(bolt.Spec, out var holePos, out var holeRot, out var axis);
+            if (state == BoltState.Started)
+            {
+                PlaceThreaded(rt, bolt, holePos, holeRot, axis);
+                _training.ShowStatus(Learn
+                    ? $"Bolt in. Grab it and twist clockwise to thread it ({bolt.Spec.ThreadTurnsToSeat:0} turns, about {TwistsToSeat(bolt.Spec)} wrist twists)."
+                    : "Bolt in.", good: true);
+            }
+            else
+            {
+                // Sits crooked in the hole at the angle it was dropped.
+                var crooked = Quaternion.FromToRotation(axis, rt.Adapter.transform.up) * holeRot;
+                rt.Adapter.SetPose(holePos + axis * _engageHeightMetres, crooked);
+                _training.ShowStatus(Learn
+                    ? $"Cross-threaded: the bolt went in {tilt:0}° off straight (max {bolt.Spec.MaxStartTiltDegrees:0}°). Grab it, pull it out and drop it in upright."
+                    : "Bolt jammed: cross-threaded.", good: false);
+            }
+            _training.NotifyProgressChanged();
         }
+
+        private static int TwistsToSeat(BoltSpec spec) =>
+            Mathf.Max(1, Mathf.RoundToInt(spec.ThreadTurnsToSeat * 360f / spec.HandTurnGearing / 135f)); // ~135° per wrist twist
 
         private void PlaceThreaded(BoltRuntime rt, BoltTightening bolt, Vector3 holePos, Quaternion holeRot, Vector3 axis)
         {
@@ -508,10 +545,9 @@ namespace EVTrainer.App
 
         private void OnBoltReleased(BoltAdapter adapter)
         {
-            if (!_byAdapter.TryGetValue(adapter, out var rt) || rt.Hole == null || Set == null) return;
-            var state = Set.Get(rt.Hole).State;
-            if (state == BoltState.Loose) TakeOut(rt, Set, null); // never turned: it just drops
-            // Started / cross-threaded / seated bolts stay in the hole (locked in place).
+            if (!_byAdapter.TryGetValue(adapter, out var rt) || Set == null) return;
+            if (rt.Hole == null) TryDropIn(rt, Set);
+            // A bolt already in a hole (started / cross-threaded) stays there, locked in place.
         }
 
         private bool IsSeatedInHole(BoltRuntime rt) => rt.Hole != null && Set != null && Set.Get(rt.Hole).IsSeated;
