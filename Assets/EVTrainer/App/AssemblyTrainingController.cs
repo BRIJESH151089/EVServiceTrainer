@@ -306,6 +306,9 @@ namespace EVTrainer.App
                 part.ReturnToStaging(_returnSeconds);
                 part.PulseReleasingController(_rejectHapticAmplitude, _rejectHapticSeconds);
             }
+            // Learn: a rejected release (wrong order, or turned the wrong way) flashes that slot's ghost red.
+            if ((result.Outcome == InstallOutcome.WrongOrder || result.Outcome == InstallOutcome.WrongOrientation) && _ghosts != null)
+                _ghosts.FlashReject(result.PartId);
 
             RefreshHud();
             _nextPanelRefresh = 0f; // show the result immediately
