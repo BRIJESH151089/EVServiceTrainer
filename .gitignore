@@ -77,3 +77,9 @@ CLAUDE.md
 
 # Unity build tool temp
 /.utmp/
+
+# Imported package samples and third-party hand assets are reference only (never commit them)
+/[Aa]ssets/[Ss]amples/
+/[Aa]ssets/[Ss]amples.meta
+/[Aa]ssets/EVTrainer/Rendering/ThirdParty/
+/[Aa]ssets/EVTrainer/Rendering/ThirdParty.meta
