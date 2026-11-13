@@ -78,8 +78,12 @@ namespace EVTrainer.Core
         public static float JointAngleDegrees(Finger finger, int jointIndex, float curl)
         {
             if (jointIndex < 0 || jointIndex > 2) throw new ArgumentOutOfRangeException(nameof(jointIndex));
-            float[] max = finger == Finger.Thumb ? new[] { 25f, 45f, 50f } : new[] { 70f, 95f, 60f };
+            var max = finger == Finger.Thumb ? ThumbMaxDegrees : FingerMaxDegrees;
             return max[jointIndex] * FingerCurls.Clamp01(curl);
         }
+
+        // Called for every joint every frame: no per-call arrays.
+        private static readonly float[] ThumbMaxDegrees = { 25f, 45f, 50f };
+        private static readonly float[] FingerMaxDegrees = { 70f, 95f, 60f };
     }
 }

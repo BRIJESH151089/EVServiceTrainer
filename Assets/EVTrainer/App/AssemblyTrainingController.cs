@@ -448,6 +448,8 @@ namespace EVTrainer.App
         private readonly List<System.Numerics.Vector3> _labelAnchors = new List<System.Numerics.Vector3>();
         private readonly Dictionary<string, (int count, Vector3 sum, float top)> _groups = new Dictionary<string, (int, Vector3, float)>();
         private float _nextLabelUpdate;
+        private readonly LabelPlacer _placer = new LabelPlacer();
+        private readonly GroupTextCache _groupTexts = new GroupTextCache();
 
         /// <summary>
         /// Learn mode: a small name label over every group of staged parts ("Battery module ×4"), the bolt tray and the
@@ -479,14 +481,14 @@ namespace EVTrainer.App
                     if (slots.Count == 0) continue;
                     var c = kv.Value.sum / kv.Value.count;
                     _labelKeys.Add(kv.Key);
-                    _labelTexts.Add(LabelLayout.GroupText(slots[0].PartName, kv.Value.count));
+                    _labelTexts.Add(_groupTexts.Get(slots[0].PartName, kv.Value.count));
                     _labelAnchors.Add(new Vector3(c.x, kv.Value.top + _labelGapMetres, c.z).ToNumerics());
                 }
                 if (_bolting != null) _bolting.CollectStagedLabels(_labelKeys, _labelTexts, _labelAnchors);
             }
 
             var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
-            var placed = LabelLayout.Place(_labelAnchors, viewer.ToNumerics());
+            var placed = _placer.Place(_labelAnchors, viewer.ToNumerics());
             for (int i = 0; i < _labelKeys.Count; i++)
             {
                 if (!_labels.TryGetValue(_labelKeys[i], out var label))

@@ -1,4 +1,3 @@
-using System.Globalization;
 using EVTrainer.Core;
 using TMPro;
 using UnityEngine;
@@ -23,7 +22,7 @@ namespace EVTrainer.UI
             if (_idle || _text == null) return;
             _idle = true;
             _shownTorque = -1f;
-            _text.text = string.Format(CultureInfo.InvariantCulture, "-- / {0:0.0} N·m", specNm);
+            _text.SetText("-- / {0:1} N·m", specNm); // TMP formats without allocating
             _text.color = _normal;
         }
 
@@ -34,7 +33,7 @@ namespace EVTrainer.UI
             _idle = false;
             _shownTorque = torqueNm;
             _shownState = state;
-            _text.text = string.Format(CultureInfo.InvariantCulture, "{0:0.0} / {1:0.0} N·m", torqueNm, specNm);
+            _text.SetText("{0:1} / {1:1} N·m", torqueNm, specNm); // every torque change: no garbage
             _text.color = state == BoltState.OverTorqued ? _over : state == BoltState.Torqued ? _inSpec : _normal;
         }
     }

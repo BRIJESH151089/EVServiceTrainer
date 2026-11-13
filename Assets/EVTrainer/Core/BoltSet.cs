@@ -46,6 +46,7 @@ namespace EVTrainer.Core
         private readonly List<string> _torqueOrder = new List<string>();
         private readonly List<BoltTightening> _bolts = new List<BoltTightening>();
         private readonly MistakeLog _log;
+        private readonly Func<string, bool> _isFinishedHole; // one delegate, not one per call (read every frame)
 
         public BoltSet(BoltSetSpec spec, bool blockOutOfOrder, MistakeLog log, bool straightenCrooked = false,
             bool autoDetachWhenFinished = false)
@@ -56,6 +57,7 @@ namespace EVTrainer.Core
             BlockOutOfOrder = blockOutOfOrder;
             StraightensCrooked = straightenCrooked;
             Pattern = new TorquePatternValidator(spec.PatternOrder);
+            _isFinishedHole = h => Get(h).IsFinished;
             foreach (var b in spec.Bolts)
             {
                 var t = new BoltTightening(b);
@@ -105,7 +107,7 @@ namespace EVTrainer.Core
         public bool IsComplete => FinishedCount == _bolts.Count;
 
         /// <summary>Next hole in the pattern that is not finished (what Learn mode highlights), or null.</summary>
-        public string NextInPattern => Pattern.NextExpected(h => Get(h).IsFinished);
+        public string NextInPattern => Pattern.NextExpected(_isFinishedHole);
 
         /// <summary>Nearest empty hole whose axis line passes within <paramref name="radiusMetres"/> of <paramref name="point"/>
         /// and which the point is within <paramref name="maxHeightMetres"/> above. Null if none.</summary>
@@ -221,7 +223,7 @@ namespace EVTrainer.Core
                     $"Hand-start all bolts first ({SeatedCount}/{Count} seated).");
             }
 
-            if (Pattern.Check(holeId, h => Get(h).IsFinished) == PatternCheck.WrongSequence)
+            if (Pattern.Check(holeId, _isFinishedHole) == PatternCheck.WrongSequence)
             {
                 int next = Pattern.SequenceNumber(NextInPattern);
                 int this_ = Pattern.SequenceNumber(holeId);

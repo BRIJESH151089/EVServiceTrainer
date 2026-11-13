@@ -42,6 +42,33 @@ namespace EVTrainer.Tests.EditMode
         }
 
         [Test]
+        public void Placer_MatchesPlace_AndReusesItsBuffer()
+        {
+            var a = new[] { new Vector3(0.3f, 1f, 0.6f), new Vector3(0.31f, 1f, 0.9f), new Vector3(-0.4f, 1.05f, 0.7f) };
+            var b = new[] { new Vector3(0f, 1f, 0.5f) };
+            var placer = new LabelPlacer();
+
+            var first = placer.Place(a, Eye);
+            Assert.That(first, Is.EqualTo(LabelLayout.Place(a, Eye)), "same layout as the one-off version");
+            var second = placer.Place(b, Eye);
+            Assert.That(second, Is.SameAs(first), "one buffer, refilled each refresh");
+            Assert.That(second.Count, Is.EqualTo(1));
+            Assert.That(second[0], Is.EqualTo(b[0]));
+        }
+
+        [Test]
+        public void GroupTextCache_ReturnsTheSameStringForTheSameGroup()
+        {
+            var cache = new GroupTextCache();
+
+            Assert.That(cache.Get("Battery module", 4), Is.EqualTo("Battery module ×4"));
+            Assert.That(cache.Get("Battery module", 4), Is.SameAs(cache.Get("Battery module", 4)), "no new string per refresh");
+            Assert.That(cache.Get("Battery module", 1), Is.EqualTo("Battery module"));
+            Assert.That(cache.Get("Battery module", 0), Is.EqualTo(""));
+            Assert.That(cache.Get(null, 2), Is.EqualTo(""));
+        }
+
+        [Test]
         public void Direction_BearingAndElevation()
         {
             LabelLayout.Direction(new Vector3(1f, 0f, 1f), out float b, out float e);

@@ -61,6 +61,37 @@ namespace EVTrainer.App
             if (_labelTemplate != null) _labelTemplate.Hide();
         }
 
+        /// <summary>Creates the review labels now (scene start, behind the fade-in), not mid-animation.</summary>
+        private void Start()
+        {
+            if (_training == null || _training.Progress == null) return;
+            var steps = DisassemblySequence.Build(_training.Progress.Definition);
+            EnsureLabels(steps.Count);
+            for (int i = 0; i < steps.Count && i < _labels.Count; i++) _labels[i].Prewarm(LayerText(steps[i], StepSize(steps[i])));
+        }
+
+        private static int StepSize(DisassemblyStep step) => step.IsBolts ? step.BoltSet.Bolts.Count : step.Slots.Count;
+
+        /// <summary>"Battery module ×4", "Cover bolts ×8", "Pack cover".</summary>
+        private string LayerText(DisassemblyStep step, int count) =>
+            _labelNames.Get(step.IsBolts ? LabelLayout.Capitalise(step.BoltSet.GroupName) : step.Slots[0].PartName, count);
+
+        private readonly GroupTextCache _labelNames = new GroupTextCache();
+        private readonly LabelPlacer _placer = new LabelPlacer();
+
+        private void EnsureLabels(int count)
+        {
+            if (_labelTemplate == null) return;
+            while (_labels.Count < count)
+            {
+                var label = Instantiate(_labelTemplate, _labelTemplate.transform.parent);
+                label.name = "Exploded Label " + _labels.Count;
+                label.transform.localScale = _labelTemplate.transform.localScale * _labelScale;
+                label.Hide();
+                _labels.Add(label);
+            }
+        }
+
         private void OnEnable()
         {
             if (_training != null) _training.Completed += OnCompleted;
@@ -262,22 +293,15 @@ namespace EVTrainer.App
                 var step = _steps[layer];
                 var b = BoundsOfLayer(layer, out int count);
                 if (count == 0) continue;
-                string name = step.IsBolts ? LabelLayout.Capitalise(step.BoltSet.GroupName) : step.Slots[0].PartName;
-                _labelTexts.Add(LabelLayout.GroupText(name, count));
+                _labelTexts.Add(LayerText(step, count));
                 _labelAnchors.Add(new Vector3(b.center.x, b.center.y, b.min.z - _labelGapMetres).ToNumerics()); // in front of the layer, facing the trainee
             }
 
             var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
-            var placed = LabelLayout.Place(_labelAnchors, viewer.ToNumerics());
+            var placed = _placer.Place(_labelAnchors, viewer.ToNumerics());
+            EnsureLabels(_labelTexts.Count);
             for (int i = 0; i < _labelTexts.Count; i++)
             {
-                if (i >= _labels.Count)
-                {
-                    var label = Instantiate(_labelTemplate, _labelTemplate.transform.parent);
-                    label.name = "Exploded Label " + i;
-                    label.transform.localScale = _labelTemplate.transform.localScale * _labelScale;
-                    _labels.Add(label);
-                }
                 _labels[i].Show(_labelTexts[i], null, placed[i].ToUnity());
             }
             for (int i = _labelTexts.Count; i < _labels.Count; i++) _labels[i].Hide();

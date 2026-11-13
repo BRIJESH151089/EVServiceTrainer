@@ -29,30 +29,18 @@ namespace EVTrainer.Core
         public static Vector3[] Place(IReadOnlyList<Vector3> anchors, Vector3 viewer, float minBearingDegrees = 9f,
             float minElevationDegrees = 4f, float stepMetres = 0.04f, int maxSteps = 8)
         {
-            if (anchors == null) throw new ArgumentNullException(nameof(anchors));
-            var result = new Vector3[anchors.Count];
-            var order = new List<int>(anchors.Count);
-            for (int i = 0; i < anchors.Count; i++) order.Add(i);
-            order.Sort((a, b) => Vector3.DistanceSquared(anchors[a], viewer).CompareTo(Vector3.DistanceSquared(anchors[b], viewer)));
-
-            var placed = new List<Vector3>(anchors.Count);
-            foreach (int i in order)
-            {
-                var p = anchors[i];
-                for (int step = 0; step < maxSteps && Overlaps(p, placed, viewer, minBearingDegrees, minElevationDegrees); step++)
-                    p += new Vector3(0f, stepMetres, 0f);
-                result[i] = p;
-                placed.Add(p);
-            }
+            var placed = new LabelPlacer().Place(anchors, viewer, minBearingDegrees, minElevationDegrees, stepMetres, maxSteps);
+            var result = new Vector3[placed.Count];
+            for (int i = 0; i < result.Length; i++) result[i] = placed[i];
             return result;
         }
 
-        private static bool Overlaps(Vector3 p, List<Vector3> placed, Vector3 viewer, float bearing, float elevation)
+        internal static bool Overlaps(Vector3 p, List<Vector3> placed, Vector3 viewer, float bearing, float elevation)
         {
             Direction(p - viewer, out float b, out float e);
-            foreach (var q in placed)
+            for (int i = 0; i < placed.Count; i++)
             {
-                Direction(q - viewer, out float qb, out float qe);
+                Direction(placed[i] - viewer, out float qb, out float qe);
                 if (Math.Abs(AxisAngle.WrapDelta(b - qb)) < bearing && Math.Abs(e - qe) < elevation) return true;
             }
             return false;
@@ -64,6 +52,61 @@ namespace EVTrainer.Core
             const double toDeg = 180.0 / Math.PI;
             bearingDegrees = (float)(Math.Atan2(d.X, d.Z) * toDeg);
             elevationDegrees = (float)(Math.Atan2(d.Y, Math.Sqrt(d.X * d.X + d.Z * d.Z)) * toDeg);
+        }
+    }
+
+    /// <summary>
+    /// <see cref="LabelLayout.Place"/> for labels refreshed every few frames: same result, but it reuses its buffers
+    /// (no garbage per refresh). The returned list is owned by the placer and valid until the next call.
+    /// </summary>
+    public sealed class LabelPlacer
+    {
+        private readonly List<int> _order = new List<int>();
+        private readonly List<float> _distance = new List<float>();
+        private readonly List<Vector3> _placed = new List<Vector3>();
+        private readonly List<Vector3> _result = new List<Vector3>();
+
+        public IReadOnlyList<Vector3> Place(IReadOnlyList<Vector3> anchors, Vector3 viewer, float minBearingDegrees = 9f,
+            float minElevationDegrees = 4f, float stepMetres = 0.04f, int maxSteps = 8)
+        {
+            if (anchors == null) throw new ArgumentNullException(nameof(anchors));
+            _order.Clear();
+            _distance.Clear();
+            _placed.Clear();
+            _result.Clear();
+            for (int i = 0; i < anchors.Count; i++)
+            {
+                _distance.Add(Vector3.DistanceSquared(anchors[i], viewer));
+                _result.Add(anchors[i]);
+                // Stable insertion by distance (a handful of labels): nearest first.
+                int at = _order.Count;
+                while (at > 0 && _distance[_order[at - 1]] > _distance[i]) at--;
+                _order.Insert(at, i);
+            }
+            for (int k = 0; k < _order.Count; k++)
+            {
+                int i = _order[k];
+                var p = anchors[i];
+                for (int step = 0; step < maxSteps && LabelLayout.Overlaps(p, _placed, viewer, minBearingDegrees, minElevationDegrees); step++)
+                    p += new Vector3(0f, stepMetres, 0f);
+                _result[i] = p;
+                _placed.Add(p);
+            }
+            return _result;
+        }
+    }
+
+    /// <summary>Remembers "Battery module ×4"-style texts so a label refresh does not build a new string each time.</summary>
+    public sealed class GroupTextCache
+    {
+        private readonly Dictionary<string, Dictionary<int, string>> _byName = new Dictionary<string, Dictionary<int, string>>(StringComparer.Ordinal);
+
+        public string Get(string name, int count)
+        {
+            if (count <= 0 || string.IsNullOrEmpty(name)) return "";
+            if (!_byName.TryGetValue(name, out var byCount)) _byName.Add(name, byCount = new Dictionary<int, string>());
+            if (!byCount.TryGetValue(count, out var text)) byCount.Add(count, text = LabelLayout.GroupText(name, count));
+            return text;
         }
     }
 }

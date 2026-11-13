@@ -91,6 +91,8 @@ namespace EVTrainer.App
         private string _refusedHole;       // last bolt the wrench was refused on (don't repeat the message while it stays there)
         private float _hapticAccumulator;
         private float _lastHandleAngle;
+        private string _boltGroupName;     // label texts are refreshed every few frames: build each once
+        private readonly GroupTextCache _groupTexts = new GroupTextCache();
 
         private AssemblyProgress Progress => _training != null ? _training.Progress : null;
         private BoltSet Set => Progress != null && Progress.BoltSets.Count > 0 ? Progress.BoltSets[0] : null;
@@ -240,8 +242,10 @@ namespace EVTrainer.App
             if (_boltGhostPrefab == null) return;
             var set = Set;
             bool show = Learn && Progress.AreBoltsAvailable(set);
-            foreach (var bolt in set.Bolts)
+            var bolts = set.Bolts;
+            for (int b = 0; b < bolts.Count; b++) // index loop: foreach over the interface would allocate every frame
             {
+                var bolt = bolts[b];
                 var hole = bolt.Spec.HoleId;
                 bool visible = show && !set.IsOccupied(hole);
                 if (!_ghosts.TryGetValue(hole, out var ghost))
@@ -555,8 +559,10 @@ namespace EVTrainer.App
             var set = Set;
             bool show = Learn && Progress.AreBoltsAvailable(set) && !set.IsComplete;
             string next = set.AllSeated ? set.NextInPattern : null; // highlight only once torquing starts
-            foreach (var bolt in set.Bolts)
+            var bolts = set.Bolts;
+            for (int b = 0; b < bolts.Count; b++)
             {
+                var bolt = bolts[b];
                 var hole = bolt.Spec.HoleId;
                 if (!_numbers.TryGetValue(hole, out var view))
                 {
@@ -794,9 +800,10 @@ namespace EVTrainer.App
             if (loose > 0)
             {
                 var c = sum / loose;
-                string name = LabelLayout.Capitalise(string.IsNullOrEmpty(data.groupName) ? "bolts" : data.groupName);
+                if (_boltGroupName == null) _boltGroupName = LabelLayout.Capitalise(string.IsNullOrEmpty(data.groupName) ? "bolts" : data.groupName);
+                string name = _boltGroupName;
                 keys.Add("bolts");
-                texts.Add(LabelLayout.GroupText(name, loose));
+                texts.Add(_groupTexts.Get(name, loose));
                 anchors.Add(new Vector3(c.x, top + 0.05f, c.z).ToNumerics());
             }
             if (_wrench != null && !_wrench.IsHeld && _wrenchHole == null && !_wrench.IsReturningHome)

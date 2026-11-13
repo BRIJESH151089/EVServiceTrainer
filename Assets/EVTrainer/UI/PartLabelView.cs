@@ -14,6 +14,8 @@ namespace EVTrainer.UI
         [SerializeField, Range(0f, 80f)] private float _tiltBackDegrees = 35f;
 
         private string _shown;
+        private string _shownTitle;
+        private string _shownHint;
 
         private void Awake()
         {
@@ -25,11 +27,14 @@ namespace EVTrainer.UI
 
         public void Show(string title, string hint, Vector3 worldPosition)
         {
-            string text = string.IsNullOrEmpty(hint) ? $"<b>{title}</b>" : $"<b>{title}</b>\n<size=80%>{hint}</size>";
-            if (text != _shown && _text != null)
+            // Labels are re-placed every few frames: only build the rich text when the words change.
+            if (_text != null && (_shown == null || !ReferenceEquals(title, _shownTitle) || !ReferenceEquals(hint, _shownHint)))
             {
-                _text.text = text;
+                string text = string.IsNullOrEmpty(hint) ? $"<b>{title}</b>" : $"<b>{title}</b>\n<size=80%>{hint}</size>";
+                if (text != _shown) _text.text = text;
                 _shown = text;
+                _shownTitle = title;
+                _shownHint = hint;
             }
             transform.position = worldPosition;
             if (!gameObject.activeSelf) gameObject.SetActive(true);
@@ -38,6 +43,17 @@ namespace EVTrainer.UI
         public void Hide()
         {
             if (gameObject.activeSelf) gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Lays out <paramref name="title"/> once now (e.g. at scene start) so the text buffers are sized before the
+        /// label is first shown mid-animation (no allocation spike then). Leaves the label hidden.
+        /// </summary>
+        public void Prewarm(string title, string hint = null)
+        {
+            Show(title, hint, transform.position);
+            if (_text != null) _text.ForceMeshUpdate(true);
+            Hide();
         }
 
         public bool IsShown => gameObject.activeSelf;
