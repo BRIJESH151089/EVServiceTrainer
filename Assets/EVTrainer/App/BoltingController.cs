@@ -63,6 +63,7 @@ namespace EVTrainer.App
         private readonly Dictionary<string, PartTint> _ghosts = new Dictionary<string, PartTint>();
         private string _readyHole; // free hole a held bolt would drop into (its ghost turns green)
         private RatchetSwing _swing;
+        private PartTint _wrenchTint;
         private bool _grabbableApplied;
         private bool _grabbable;
         private string _wrenchHole;        // bolt the wrench is fitted on
@@ -85,6 +86,12 @@ namespace EVTrainer.App
                 var rt = new BoltRuntime { Adapter = b, Tint = b.GetComponent<PartTint>() };
                 _runtimes.Add(rt);
                 _byAdapter[b] = rt;
+            }
+
+            if (_wrench != null)
+            {
+                _wrenchTint = _wrench.GetComponent<PartTint>();
+                if (_wrenchTint == null) _wrenchTint = _wrench.gameObject.AddComponent<PartTint>();
             }
 
             _audio = gameObject.AddComponent<AudioSource>();
@@ -137,7 +144,9 @@ namespace EVTrainer.App
             {
                 if (rt.Adapter.IsHeld) UpdateHeldBolt(rt);
                 UpdateTint(rt);
+                if (rt.Tint != null) rt.Tint.SetHighlighted(rt.Adapter.IsHovered && !rt.Adapter.IsHeld);
             }
+            if (_wrenchTint != null) _wrenchTint.SetHighlighted(_wrench.IsHovered && !_wrench.IsHeld);
             UpdateWrench();
             UpdateNumbers();
             UpdateGhosts();

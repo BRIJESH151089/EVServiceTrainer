@@ -306,6 +306,7 @@ namespace EVTrainer.App
         {
             RenderHand(_leftHand, _leftHandVisual);
             RenderHand(_rightHand, _rightHandVisual);
+            UpdateHoverHighlights();
             UpdateHeldPreview();
             UpdatePartLabel();
 
@@ -315,6 +316,23 @@ namespace EVTrainer.App
                 _nextPanelRefresh = 0f;
             }
             UpdateDebugPanel();
+        }
+
+        private readonly Dictionary<GrabbablePartAdapter, PartTint> _tints = new Dictionary<GrabbablePartAdapter, PartTint>();
+
+        /// <summary>Subtle highlight on a free part while a hand or controller is close enough to grab it.</summary>
+        private void UpdateHoverHighlights()
+        {
+            foreach (var part in _parts)
+            {
+                if (!_tints.TryGetValue(part, out var tint))
+                {
+                    tint = part.GetComponent<PartTint>();
+                    if (tint == null) tint = part.gameObject.AddComponent<PartTint>();
+                    _tints[part] = tint;
+                }
+                tint.SetHighlighted(part.IsHovered && !part.IsHeld && !part.IsLocked);
+            }
         }
 
         /// <summary>
