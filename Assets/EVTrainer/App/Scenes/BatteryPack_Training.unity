@@ -962,6 +962,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Busbar 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6989897267931075835, guid: 214a6154ad5061c4db9b1ab5a54c00ae, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1197,6 +1201,10 @@ PrefabInstance:
     - target: {fileID: 2496687534168979856, guid: 860175caeba4ef446b2d438cadb276fb, type: 3}
       propertyPath: m_Name
       value: Cooling Plate
+      objectReference: {fileID: 0}
+    - target: {fileID: 4182450779502080129, guid: 860175caeba4ef446b2d438cadb276fb, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8709723179708565637, guid: 860175caeba4ef446b2d438cadb276fb, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1905,6 +1913,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 6
@@ -2030,6 +2042,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2014194962}
     m_Modifications:
+    - target: {fileID: 2574500257540085590, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7377270816251160857, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
       propertyPath: m_Name
       value: Battery Module 3
@@ -2700,6 +2716,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5493787513659020834, guid: d1ec605e7f254ed429ccba81cd906005, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6952190835499253937, guid: d1ec605e7f254ed429ccba81cd906005, type: 3}
       propertyPath: m_fontSize
       value: 0.05
@@ -3274,6 +3294,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2014194962}
     m_Modifications:
+    - target: {fileID: 2574500257540085590, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7377270816251160857, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
       propertyPath: m_Name
       value: Battery Module 2
@@ -3978,6 +4002,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 2
@@ -4167,6 +4195,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 1
@@ -5252,6 +5284,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Busbar 3
       objectReference: {fileID: 0}
+    - target: {fileID: 6989897267931075835, guid: 214a6154ad5061c4db9b1ab5a54c00ae, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5329,6 +5365,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 7
@@ -5511,6 +5551,10 @@ PrefabInstance:
     - target: {fileID: 2111288353584460874, guid: cd5b0e890db251f4fbc0226507dad928, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3504788420903220659, guid: cd5b0e890db251f4fbc0226507dad928, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8950264847354705338, guid: cd5b0e890db251f4fbc0226507dad928, type: 3}
       propertyPath: m_Name
@@ -5878,6 +5922,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2014194962}
     m_Modifications:
+    - target: {fileID: 2574500257540085590, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7377270816251160857, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
       propertyPath: m_Name
       value: Battery Module 4
@@ -6070,6 +6118,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 8
@@ -6404,6 +6456,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 3
@@ -6559,6 +6615,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Busbar 2
       objectReference: {fileID: 0}
+    - target: {fileID: 6989897267931075835, guid: 214a6154ad5061c4db9b1ab5a54c00ae, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6675,6 +6735,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 4
@@ -6948,6 +7012,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1825263825}
     m_Modifications:
+    - target: {fileID: 1784447572413623141, guid: fb42275e949f0cf48bef284926c68477, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2254994737321598964, guid: fb42275e949f0cf48bef284926c68477, type: 3}
       propertyPath: m_Name
       value: Cover Bolt 5
@@ -7025,6 +7093,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2014194962}
     m_Modifications:
+    - target: {fileID: 2500772013077321876, guid: dc5e670e4b4e971439d92f80b272d50f, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3924043064621388903, guid: dc5e670e4b4e971439d92f80b272d50f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.18
@@ -7141,6 +7213,10 @@ PrefabInstance:
     - target: {fileID: 3373857276117044775, guid: 8d6c8364a76f45844b0bafe0ee262b9f, type: 3}
       propertyPath: m_Name
       value: HV Connector
+      objectReference: {fileID: 0}
+    - target: {fileID: 7448507270363510958, guid: 8d6c8364a76f45844b0bafe0ee262b9f, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8668,6 +8744,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2014194962}
     m_Modifications:
+    - target: {fileID: 2574500257540085590, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
+      propertyPath: m_DistanceCalculationMode
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7377270816251160857, guid: 84e6cf36a146e5941a3d7081c9f0e266, type: 3}
       propertyPath: m_Name
       value: Battery Module 1
