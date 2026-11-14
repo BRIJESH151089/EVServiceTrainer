@@ -7,8 +7,9 @@ namespace EVTrainer.App
 {
     /// <summary>
     /// End of a run: builds the Core <see cref="TrainingReport"/> (scoring rules from the module data), shows it on the
-    /// info panel in place of the step list, and offers Retry Test and Practice (a fresh run straight in that mode) next to
-    /// the exploded-view buttons. The mistakes list pages with two small push buttons when it is long.
+    /// info panel in place of the step list, saves it as JSON (<see cref="ReportStore"/>), and offers Retry Test and
+    /// Practice (a fresh run straight in that mode) next to the exploded-view buttons. The mistakes list pages with two
+    /// small push buttons when it is long.
     /// </summary>
     public sealed class RunReportController : MonoBehaviour
     {
@@ -48,14 +49,27 @@ namespace EVTrainer.App
         private void OnCompleted()
         {
             var progress = _training.Progress;
+            var end = DateTimeOffset.Now;
             Report = TrainingReportBuilder.Build(progress, _training.ScoringRules, Guid.NewGuid().ToString("N"),
-                _training.RunStartedAt, DateTimeOffset.Now, _training.RunTime);
+                _training.RunStartedAt, end, _training.RunTime);
             if (_panel != null) _panel.Show(Report);
             SetButtons(completed: true);
             DevLog.Info($"Run complete: {Report.result} {Report.score} in {ReportFormat.Duration(Report.durationSeconds)}, " +
                         $"{Report.summary.mistakeCount} mistakes ({Report.summary.criticalCount} critical).");
             ReportReady?.Invoke(Report);
+            StartCoroutine(SaveNextFrame(Report, end));
         }
+
+        /// <summary>Saved one frame after the panel appears, so the completion frame stays light.</summary>
+        private System.Collections.IEnumerator SaveNextFrame(TrainingReport report, DateTimeOffset end)
+        {
+            yield return null;
+            SavedPath = ReportStore.Save(report, end);
+            DevLog.Info("Report saved: " + SavedPath);
+        }
+
+        /// <summary>Where the last report was written (empty before).</summary>
+        public string SavedPath { get; private set; } = "";
 
         private void SetButtons(bool completed)
         {
