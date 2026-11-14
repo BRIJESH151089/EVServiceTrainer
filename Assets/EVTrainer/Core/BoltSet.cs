@@ -44,6 +44,8 @@ namespace EVTrainer.Core
         private readonly Dictionary<string, BoltTightening> _byHole = new Dictionary<string, BoltTightening>(StringComparer.Ordinal);
         private readonly HashSet<string> _occupied = new HashSet<string>(StringComparer.Ordinal);
         private readonly List<string> _torqueOrder = new List<string>();
+        private readonly Dictionary<string, double> _seatedAt = new Dictionary<string, double>(StringComparer.Ordinal);
+        private readonly Dictionary<string, double> _finishedAt = new Dictionary<string, double>(StringComparer.Ordinal);
         private readonly List<BoltTightening> _bolts = new List<BoltTightening>();
         private readonly MistakeLog _log;
         private readonly Func<string, bool> _isFinishedHole; // one delegate, not one per call (read every frame)
@@ -91,6 +93,12 @@ namespace EVTrainer.Core
 
         /// <summary>Holes in the order their bolts first reached Torqued / OverTorqued.</summary>
         public IReadOnlyList<string> TorqueOrder => _torqueOrder;
+
+        /// <summary>Run time at which the bolt in <paramref name="holeId"/> was first seated (for the report).</summary>
+        public bool TryGetSeatedTime(string holeId, out double timeSeconds) => _seatedAt.TryGetValue(holeId, out timeSeconds);
+
+        /// <summary>Run time at which the bolt in <paramref name="holeId"/> was first finished with the wrench (for the report).</summary>
+        public bool TryGetFinishedTime(string holeId, out double timeSeconds) => _finishedAt.TryGetValue(holeId, out timeSeconds);
 
         public BoltTightening Get(string holeId)
         {
@@ -184,6 +192,8 @@ namespace EVTrainer.Core
             Get(holeId).Remove();
             _occupied.Remove(holeId);
             _torqueOrder.Remove(holeId);
+            _seatedAt.Remove(holeId);
+            _finishedAt.Remove(holeId);
         }
 
         /// <summary>Hand twist of the bolt in <paramref name="holeId"/>. Logs a CrossThread mistake when the thread jams.</summary>
@@ -192,6 +202,7 @@ namespace EVTrainer.Core
             var bolt = Get(holeId);
             var before = bolt.State;
             var after = bolt.HandTurn(deltaDegrees, tiltDegrees);
+            if (bolt.IsSeated && !_seatedAt.ContainsKey(holeId)) _seatedAt[holeId] = timeSeconds;
             if (after == BoltState.CrossThreaded && before != BoltState.CrossThreaded)
                 LogCrossThread(bolt, holeId, tiltDegrees, timeSeconds);
             return after;
@@ -242,6 +253,7 @@ namespace EVTrainer.Core
             var before = bolt.State;
             var after = bolt.ApplyRotation(deltaDegrees);
             if (after != before && bolt.IsFinished && !_torqueOrder.Contains(holeId)) _torqueOrder.Add(holeId);
+            if (bolt.IsFinished && !_finishedAt.ContainsKey(holeId)) _finishedAt[holeId] = timeSeconds;
             if (after == BoltState.OverTorqued && before != BoltState.OverTorqued)
                 _log.Record(new MistakeEntry(timeSeconds, MistakeKind.OverTorque, MistakeTypeId, holeId, holeId,
                     $"Over-torqued: {bolt.TorqueNm:0.0} N·m (spec {bolt.Spec.TorqueSpecNm:0.0} ± {bolt.Spec.TorqueToleranceNm:0.0})."));
