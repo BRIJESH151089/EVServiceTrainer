@@ -21,7 +21,7 @@ namespace EVTrainer.Tests.EditMode
             Assert.That(HapticProfiles.KindFor(FeedbackCue.TorqueClick), Is.EqualTo(HapticKind.TorqueClick));
             Assert.That(HapticProfiles.KindFor(FeedbackCue.OverTorque), Is.EqualTo(HapticKind.OverTorque));
             Assert.That(P.ForCue(FeedbackCue.CheckingFit).IsNone, Is.True);
-            Assert.That(P.ForCue(FeedbackCue.ModuleComplete).IsNone, Is.True);
+            Assert.That(HapticProfiles.KindFor(FeedbackCue.ModuleComplete), Is.EqualTo(HapticKind.Snap), "completion is felt");
         }
 
         [Test]

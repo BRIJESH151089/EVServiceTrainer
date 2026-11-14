@@ -347,6 +347,55 @@ namespace EVTrainer.Tests.EditMode
             Assert.That(back.durationSeconds, Is.EqualTo(301.25));
         }
 
+        // ---------------- Panel texts ----------------
+
+        [Test]
+        public void KeyRows_ShowTheSummary()
+        {
+            var r = Report(Run(TrainingMode.Test, (run, phase) =>
+            {
+                Inject(run, phase, MistakeKind.WrongOrder);
+                Inject(run, phase, MistakeKind.OverTorque);
+            }), 288);
+            var rows = ReportFormat.KeyRows(r);
+
+            Assert.That(rows.Select(kv => kv.Key), Is.EqualTo(new[]
+            {
+                "Steps in correct order", "Wrong-order attempts", "First-time fits", "Torque in spec",
+                "Cross pattern followed", "Critical mistakes", "Total time",
+            }));
+            Assert.That(rows.Select(kv => kv.Value), Is.EqualTo(new[] { "4/5", "1", "75%", "7/8", "Yes", "1", "4m 48s" }));
+        }
+
+        [Test]
+        public void Mistakes_MostImportantFirst_WithPlainNames()
+        {
+            var list = new[]
+            {
+                new MistakeRecord { type = "NotSeated", item = "Cooling Plate", timeSeconds = 5, penalty = 2 },
+                new MistakeRecord { type = "WrongOrder", item = "Battery Module 1", timeSeconds = 9, penalty = 10 },
+                new MistakeRecord { type = "OverTorque", item = "Bolt 1", timeSeconds = 301, penalty = 10, critical = true },
+                new MistakeRecord { type = "WrongOrientation", item = "Battery Module 2", timeSeconds = 7, penalty = 5 },
+                new MistakeRecord { type = "WrongOrder", item = "Pack Cover", timeSeconds = 11, penalty = 10 },
+            };
+            var sorted = ReportFormat.ByImportance(list);
+
+            Assert.That(sorted.Select(m => m.item), Is.EqualTo(new[]
+                { "Bolt 1", "Battery Module 1", "Pack Cover", "Battery Module 2", "Cooling Plate" }));
+            Assert.That(ReportFormat.MistakeLine(sorted[0]), Is.EqualTo("Over-torqued · Bolt 1 · 5m 01s"));
+            Assert.That(ReportFormat.MistakeTitle("CrossThreadLeftIn"), Is.EqualTo("Cross-thread left in"));
+            Assert.That(ReportFormat.MistakeTitle("WrongSequence"), Is.EqualTo("Out of pattern"));
+        }
+
+        [Test]
+        public void Pages_RoundUp_AtLeastOne()
+        {
+            Assert.That(ReportFormat.PageCount(0, 4), Is.EqualTo(1));
+            Assert.That(ReportFormat.PageCount(4, 4), Is.EqualTo(1));
+            Assert.That(ReportFormat.PageCount(5, 4), Is.EqualTo(2));
+            Assert.That(ReportFormat.PageCount(9, 4), Is.EqualTo(3));
+        }
+
         // ---------------- Texts ----------------
 
         [Test]

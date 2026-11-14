@@ -40,12 +40,23 @@ namespace EVTrainer.UI
         private void Choose(TrainingMode mode)
         {
             if (_chosen) return;
-            _chosen = true;
+            ShowChosen(mode);
             DevLog.Info($"Start panel: '{mode}' chosen (button latched until Restart).");
+            ModeChosen?.Invoke(mode);
+        }
+
+        /// <summary>
+        /// Shows <paramref name="mode"/> as the chosen mode (its button latched, the other disabled) without raising
+        /// <see cref="ModeChosen"/>: a run started by Retry Test or Practice already knows its mode.
+        /// </summary>
+        public void ShowChosen(TrainingMode mode)
+        {
+            _chosen = true;
+            var chosen = mode == TrainingMode.Learn ? _learnButton : _testButton;
             var other = mode == TrainingMode.Learn ? _testButton : _learnButton;
+            if (chosen != null) chosen.Latch();
             if (other != null) other.SetInteractable(false);
             if (_prompt != null) _prompt.text = $"{mode} mode. Press Restart to change.";
-            ModeChosen?.Invoke(mode);
         }
     }
 }

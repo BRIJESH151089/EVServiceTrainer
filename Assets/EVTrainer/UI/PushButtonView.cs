@@ -92,6 +92,14 @@ namespace EVTrainer.UI
             ApplyLook();
         }
 
+        /// <summary>Shows a latching button pressed in (selected) without a click or its event.</summary>
+        public void Latch()
+        {
+            if (_logic == null) return;
+            _logic.Latch();
+            ApplyLook();
+        }
+
         /// <summary>Releases a latched button: it springs back out and can be pressed again.</summary>
         public void Unlatch()
         {

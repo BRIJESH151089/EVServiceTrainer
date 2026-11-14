@@ -22,6 +22,9 @@ namespace EVTrainer.XR
         /// <summary>True while this controller is holding something (XRI selection).</summary>
         public bool IsHolding => _interactor != null && _interactor.hasSelection;
 
+        /// <summary>Haptic pulse on this controller.</summary>
+        public void Pulse(HapticPulse pulse) => HapticOutput.Send(_interactor, pulse);
+
         private void Reset()
         {
             _interactor = GetComponentInChildren<XRBaseInputInteractor>();

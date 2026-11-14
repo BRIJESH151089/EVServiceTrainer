@@ -178,6 +178,7 @@ namespace EVTrainer.App
             LastResult = null;
             _lastInstallText = null;
             _runStartTime = Time.time;
+            RunStartedAt = System.DateTimeOffset.Now;
             IsRunning = true;
             foreach (var part in _parts) part.SetGrabbable(true);
             // The HUD and Restart only appear once the start panel has gone, so the two never overlap.
@@ -195,6 +196,12 @@ namespace EVTrainer.App
             foreach (var part in _parts) if (part.IsGrabbable) n++;
             return n;
         }
+
+        /// <summary>Wall-clock time the run started (for the report).</summary>
+        public System.DateTimeOffset RunStartedAt { get; private set; }
+
+        /// <summary>The module's scoring and pass rules (module data).</summary>
+        public ScoringRules ScoringRules => _module.ToScoringRules();
 
         /// <summary>Seconds since the run started (for the mistake log).</summary>
         public double RunTime => Time.time - _runStartTime;
@@ -242,6 +249,9 @@ namespace EVTrainer.App
             if (!IsRunning || IsCompleted || !Progress.IsComplete) return;
             IsCompleted = true;
             PlaySound(FeedbackCue.ModuleComplete, transform.position);
+            var pulse = Haptics.ForCue(FeedbackCue.ModuleComplete); // felt in both hands
+            if (_leftInput != null) _leftInput.Pulse(pulse);
+            if (_rightInput != null) _rightInput.Pulse(pulse);
             Completed?.Invoke();
         }
 
@@ -261,6 +271,15 @@ namespace EVTrainer.App
             if (_startPanel == null)
             {
                 BeginRun(TrainingMode.Learn);
+                return;
+            }
+
+            // Retry Test / Practice: the run starts straight in the chosen mode.
+            if (RunLauncher.TryTakeNextRun(out var nextMode))
+            {
+                _startPanel.Show(_definition.Title);
+                _startPanel.ShowChosen(nextMode);
+                BeginRun(nextMode);
                 return;
             }
 
@@ -288,11 +307,18 @@ namespace EVTrainer.App
         private void OnModeChosen(TrainingMode mode) => BeginRun(mode);
 
         /// <summary>Restart: reload the scene, which brings back the mode selection with every part on its rack.</summary>
-        private void OnRestartRequested()
+        private void OnRestartRequested() => Restart(null);
+
+        /// <summary>
+        /// Fades out and reloads the scene. With <paramref name="nextMode"/> (Retry Test, Practice) the new run starts
+        /// straight in that mode; without it the mode choice shows again.
+        /// </summary>
+        public void Restart(TrainingMode? nextMode)
         {
             if (_restarting) return;
+            if (nextMode.HasValue) RunLauncher.StartNextRunIn(nextMode.Value);
             _restarting = true;
-            DevLog.Info("Restart pressed: reloading the scene.");
+            DevLog.Info($"Restart: reloading the scene ({(nextMode.HasValue ? "next run: " + nextMode.Value : "choose a mode")}).");
             // Fade to black first; the reloaded scene fades back in, so the view never jumps.
             string scene = gameObject.scene.name;
             if (_fader != null) _fader.FadeOutThen(() => UnityEngine.SceneManagement.SceneManager.LoadScene(scene));

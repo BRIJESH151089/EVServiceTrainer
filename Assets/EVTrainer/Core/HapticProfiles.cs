@@ -106,8 +106,9 @@ namespace EVTrainer.Core
             FeedbackCue.BoltThreadTick => HapticKind.LightTick,
             FeedbackCue.RatchetBack => HapticKind.LightTick,
             FeedbackCue.TorqueClick => HapticKind.TorqueClick,
+            FeedbackCue.ModuleComplete => HapticKind.Snap, // felt as well as heard: the run is done
             FeedbackCue.OverTorque => HapticKind.OverTorque,
-            _ => HapticKind.None, // checking fit and the completion chime are heard, not felt
+            _ => HapticKind.None, // checking fit is heard, not felt
         };
 
         /// <summary>

@@ -324,6 +324,58 @@ namespace EVTrainer.Core
             return total >= 60 ? $"{total / 60}m {total % 60:00}s" : $"{total}s";
         }
 
+        /// <summary>Plain name of a mistake type for the trainee.</summary>
+        public static string MistakeTitle(string type) => type switch
+        {
+            nameof(MistakeKind.WrongOrder) => "Wrong order",
+            nameof(MistakeKind.WrongOrientation) => "Wrong way round",
+            nameof(MistakeKind.NotSeated) => "Not seated",
+            nameof(MistakeKind.CrossThread) => "Cross-threaded",
+            nameof(MistakeKind.WrongSequence) => "Out of pattern",
+            nameof(MistakeKind.OverTorque) => "Over-torqued",
+            nameof(MistakeKind.TorqueBeforeAllSeated) => "Torqued too early",
+            TrainingReportBuilder.CrossThreadLeftIn => "Cross-thread left in",
+            _ => type ?? "",
+        };
+
+        /// <summary>Most important first: critical, then by penalty, then in the order they happened.</summary>
+        public static List<MistakeRecord> ByImportance(IReadOnlyList<MistakeRecord> mistakes)
+        {
+            var list = new List<MistakeRecord>(mistakes ?? Array.Empty<MistakeRecord>());
+            var order = new Dictionary<MistakeRecord, int>();
+            for (int i = 0; i < list.Count; i++) order[list[i]] = i;
+            list.Sort((a, b) =>
+            {
+                if (a.critical != b.critical) return a.critical ? -1 : 1;
+                int byPenalty = b.penalty.CompareTo(a.penalty);
+                return byPenalty != 0 ? byPenalty : order[a].CompareTo(order[b]);
+            });
+            return list;
+        }
+
+        /// <summary>One line per mistake: "Over-torqued · Bolt 1 · 5m 01s".</summary>
+        public static string MistakeLine(MistakeRecord m) =>
+            $"{MistakeTitle(m.type)} · {m.item} · {Duration(m.timeSeconds)}";
+
+        /// <summary>The key rows of the report panel, label and value.</summary>
+        public static List<KeyValuePair<string, string>> KeyRows(TrainingReport r)
+        {
+            var s = r.summary;
+            return new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("Steps in correct order", $"{s.stepsInOrder}/{s.stepCount}"),
+                new KeyValuePair<string, string>("Wrong-order attempts", s.wrongOrderAttempts.ToString()),
+                new KeyValuePair<string, string>("First-time fits", $"{Math.Round(s.firstTimeFitPercent, MidpointRounding.AwayFromZero)}%"),
+                new KeyValuePair<string, string>("Torque in spec", $"{s.boltsInSpec}/{s.boltCount}"),
+                new KeyValuePair<string, string>("Cross pattern followed", s.crossPatternFollowed ? "Yes" : "No"),
+                new KeyValuePair<string, string>("Critical mistakes", s.criticalCount.ToString()),
+                new KeyValuePair<string, string>("Total time", Duration(r.durationSeconds)),
+            };
+        }
+
+        /// <summary>Number of pages of <paramref name="perPage"/> lines (at least 1).</summary>
+        public static int PageCount(int lines, int perPage) => perPage <= 0 ? 1 : Math.Max(1, (lines + perPage - 1) / perPage);
+
         /// <summary>"Last result: PASS 91% · 4m 48s", "Last result: Practice 85% · 5m 02s" or "No results yet".</summary>
         public static string LastResult(TrainingReport report)
         {
