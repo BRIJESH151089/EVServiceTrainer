@@ -25,7 +25,7 @@ namespace EVTrainer.XR
         [Tooltip("Point of the LEFT glove (glove space: +Z wrist → fingers, +Y back of the hand, thumb +X) that sits on " +
                  "the grip origin: the palm centroid, slightly inside the handle. Mirrored for the right hand.")]
         [SerializeField] private Vector3 _gripPointInGlove = new Vector3(0f, -0.025f, 0.06f);
-        [Tooltip("The glove's forward turns from grip +Y (wrist → knuckles) towards grip +Z (thumb end) by this much, " +
+        [Tooltip("The glove's forward turns from grip -Y (wrist → knuckles) towards grip +Z (thumb end) by this much, " +
                  "because the handle crosses the palm obliquely.")]
         [SerializeField, Range(-60f, 60f)] private float _handTiltDegrees = GloveMount.DefaultHandTiltDegrees;
         [Tooltip("Place the wrist from the data above at start (off: keep the transform as placed in the scene).")]
@@ -113,7 +113,8 @@ namespace EVTrainer.XR
         {
             var frame = _input != null ? _input.Current : InputFrame.None;
             // Near a button: point with the index at the poke point; otherwise grip and trigger drive the fingers.
-            IsPointing = _pokePoint != null && frame.Grip < 0.5f // holding something with grip: keep the fist
+            // Not while carrying something. (Grip alone does not count: many people rest a finger on the grip button.)
+            IsPointing = _pokePoint != null && !(_input != null && _input.IsHolding)
                          && PokeButtonInput.NearestDistance(_pokePoint.position) <= _pointingRadius;
             var target = IsPointing ? ControllerHandPose.Pointing : ControllerHandPose.FromInput(frame.Grip, frame.Trigger);
             _curls = ControllerHandPose.Ease(_curls, target, Time.deltaTime, _easeSeconds);

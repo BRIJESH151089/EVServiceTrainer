@@ -19,6 +19,9 @@ namespace EVTrainer.XR
 
         public InteractorHandedness Handedness => _interactor != null ? _interactor.handedness : InteractorHandedness.None;
 
+        /// <summary>True while this controller is holding something (XRI selection).</summary>
+        public bool IsHolding => _interactor != null && _interactor.hasSelection;
+
         private void Reset()
         {
             _interactor = GetComponentInChildren<XRBaseInputInteractor>();
