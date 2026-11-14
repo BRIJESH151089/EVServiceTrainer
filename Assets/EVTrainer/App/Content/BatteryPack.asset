@@ -297,3 +297,24 @@ MonoBehaviour:
     wrenchName: Torque wrench
     wrenchHint: "Fit on a seated bolt, swing clockwise to 8 N\xB7m"
     explodeLiftMetres: 0.06
+  _penalties:
+  - kind: 0
+    points: 10
+  - kind: 1
+    points: 5
+  - kind: 2
+    points: 2
+  - kind: 3
+    points: 10
+  - kind: 5
+    points: 10
+  - kind: 4
+    points: 5
+  - kind: 6
+    points: 5
+  _criticalMistakes: 05000000
+  _crossThreadLeftInIsCritical: 1
+  _passScore: 80
+  _targetMinutes: 6
+  _timePointsPerMinute: 1
+  _timeCapPoints: 5

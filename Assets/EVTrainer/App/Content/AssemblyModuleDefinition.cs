@@ -137,6 +137,52 @@ namespace EVTrainer.App
         [SerializeField] private List<PartEntry> _parts = new List<PartEntry>();
         [SerializeField] private List<BoltSetEntry> _boltSets = new List<BoltSetEntry>();
 
+        /// <summary>Points taken off the score for one mistake of a kind.</summary>
+        [Serializable]
+        public sealed class PenaltyEntry
+        {
+            public MistakeKind kind;
+            [Min(0f)] public float points;
+
+            public PenaltyEntry(MistakeKind kind, float points)
+            {
+                this.kind = kind;
+                this.points = points;
+            }
+        }
+
+        [Header("Scoring and pass rules (Test assessment; Learn gets the same penalties as a practice score)")]
+        [Tooltip("Each logged mistake takes these points off the starting 100.")]
+        [SerializeField] private List<PenaltyEntry> _penalties = new List<PenaltyEntry>
+        {
+            new PenaltyEntry(MistakeKind.WrongOrder, 10f),
+            new PenaltyEntry(MistakeKind.WrongOrientation, 5f),
+            new PenaltyEntry(MistakeKind.NotSeated, 2f),
+            new PenaltyEntry(MistakeKind.CrossThread, 10f),
+            new PenaltyEntry(MistakeKind.OverTorque, 10f),
+            new PenaltyEntry(MistakeKind.WrongSequence, 5f),
+            new PenaltyEntry(MistakeKind.TorqueBeforeAllSeated, 5f),
+        };
+        [Tooltip("Any of these fails a Test run whatever the score.")]
+        [SerializeField] private List<MistakeKind> _criticalMistakes = new List<MistakeKind> { MistakeKind.OverTorque };
+        [Tooltip("A bolt still cross-threaded at the end is a critical mistake.")]
+        [SerializeField] private bool _crossThreadLeftInIsCritical = true;
+        [SerializeField, Range(0f, 100f)] private float _passScore = 80f;
+        [Tooltip("Test: finishing faster than this earns a small bonus, slower a small penalty.")]
+        [SerializeField, Min(0.5f)] private float _targetMinutes = 6f;
+        [SerializeField, Min(0f)] private float _timePointsPerMinute = 1f;
+        [Tooltip("The time bonus or penalty never exceeds this many points.")]
+        [SerializeField, Min(0f)] private float _timeCapPoints = 5f;
+
+        /// <summary>The module's scoring and pass rules as Core data.</summary>
+        public ScoringRules ToScoringRules()
+        {
+            var penalties = new Dictionary<MistakeKind, float>();
+            foreach (var p in _penalties) penalties[p.kind] = p.points;
+            return new ScoringRules(penalties, _criticalMistakes, _crossThreadLeftInIsCritical, _passScore,
+                _targetMinutes * 60.0, _timePointsPerMinute, _timeCapPoints);
+        }
+
         public string Id => _id;
         public string Title => _title;
         public IReadOnlyList<PartEntry> Parts => _parts;
