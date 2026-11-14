@@ -31,6 +31,14 @@ namespace EVTrainer.XR
         [Tooltip("Place the wrist from the data above at start (off: keep the transform as placed in the scene).")]
         [SerializeField] private bool _applyMount = true;
 
+        [Header("Poke (fixed point in grip space)")]
+        [Tooltip("The controller's poke interactor; placed at the extended index fingertip of the pointing pose " +
+                 "(Core ControllerPokePoint), as a child of the controller (grip pose), never on a finger bone.")]
+        [SerializeField] private Transform _pokePoint;
+        [SerializeField, Range(0f, 0.03f)] private float _pokePadMetres = ControllerPokePoint.DefaultPadMetres;
+        [Tooltip("Within this distance of a push button the glove shows the pointing pose (index straight at the poke point).")]
+        [SerializeField, Min(0f)] private float _pointingRadius = 0.15f;
+
         private sealed class Joint
         {
             public Transform Bone;
@@ -51,13 +59,25 @@ namespace EVTrainer.XR
         /// <summary>The wrist pose in grip space from the per-side data.</summary>
         public GloveMount Mount => GloveMount.Fit(_side, _gripPointInGlove.ToNumerics(), _handTiltDegrees);
 
+        /// <summary>The controller's poke point (null if not assigned).</summary>
+        public Transform PokePoint => _pokePoint;
+
+        /// <summary>True while the glove shows the pointing pose (near a push button).</summary>
+        public bool IsPointing { get; private set; }
+
         private void Awake()
         {
             if (_handRoot == null) _handRoot = transform;
-            if (_applyMount)
+            var mount = Mount;
+            if (_applyMount) _handRoot.SetLocalPositionAndRotation(mount.Position.ToUnity(), mount.Rotation.ToUnity());
+            var grip = _handRoot.parent;
+            if (_pokePoint != null && grip != null)
             {
-                var mount = Mount;
-                _handRoot.SetLocalPositionAndRotation(mount.Position.ToUnity(), mount.Rotation.ToUnity());
+                // Fixed in grip space: grip and trigger curls never move it.
+                _pokePoint.SetParent(grip, false);
+                _pokePoint.SetLocalPositionAndRotation(
+                    ControllerPokePoint.PositionInGrip(_side, mount, _pokePadMetres).ToUnity(),
+                    ControllerPokePoint.RotationInGrip(_side, mount).ToUnity());
             }
             foreach (Finger finger in System.Enum.GetValues(typeof(Finger)))
             {
@@ -92,7 +112,10 @@ namespace EVTrainer.XR
         private void LateUpdate()
         {
             var frame = _input != null ? _input.Current : InputFrame.None;
-            var target = ControllerHandPose.FromInput(frame.Grip, frame.Trigger);
+            // Near a button: point with the index at the poke point; otherwise grip and trigger drive the fingers.
+            IsPointing = _pokePoint != null && frame.Grip < 0.5f // holding something with grip: keep the fist
+                         && PokeButtonInput.NearestDistance(_pokePoint.position) <= _pointingRadius;
+            var target = IsPointing ? ControllerHandPose.Pointing : ControllerHandPose.FromInput(frame.Grip, frame.Trigger);
             _curls = ControllerHandPose.Ease(_curls, target, Time.deltaTime, _easeSeconds);
             foreach (var j in _joints)
                 j.Bone.localRotation = j.Bind * Quaternion.AngleAxis(ControllerHandPose.JointAngleDegrees(j.Finger, j.Index, _curls[j.Finger]), j.Axis);

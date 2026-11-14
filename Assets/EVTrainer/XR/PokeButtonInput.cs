@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EVTrainer.Core;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -17,17 +18,31 @@ namespace EVTrainer.XR
     {
         [Tooltip("Cap travel in metres (same as the view's).")]
         [SerializeField, Min(0.001f)] private float _travel = 0.009f;
+
+        private static readonly List<PokeButtonInput> s_Active = new List<PokeButtonInput>();
+
         private XRSimpleInteractable _interactable;
+        private IXRInteractor _lastPresser;
 
         /// <summary>Pulse on the pressing controller (set by the composition root from the haptic profiles).</summary>
         public HapticPulse ClickPulse { get; set; } = HapticProfiles.Default.ForCue(FeedbackCue.UiPress);
-        private IXRInteractor _lastPresser;
+
+        /// <summary>Distance from <paramref name="point"/> to the nearest enabled button (infinity if none).</summary>
+        public static float NearestDistance(Vector3 point)
+        {
+            float best = float.PositiveInfinity;
+            for (int i = 0; i < s_Active.Count; i++) best = Mathf.Min(best, Vector3.Distance(point, s_Active[i].transform.position));
+            return best;
+        }
 
         private void Awake()
         {
             _interactable = GetComponent<XRSimpleInteractable>();
             _interactable.hoverEntered.AddListener(OnHoverEntered);
         }
+
+        private void OnEnable() => s_Active.Add(this);
+        private void OnDisable() => s_Active.Remove(this);
 
         private void OnDestroy()
         {
