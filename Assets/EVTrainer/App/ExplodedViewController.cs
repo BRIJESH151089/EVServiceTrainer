@@ -28,8 +28,9 @@ namespace EVTrainer.App
         [SerializeField] private PushButtonView _disassemblyButton;
         [Tooltip("Template for the name labels shown while the assembly is apart.")]
         [SerializeField] private PartLabelView _labelTemplate;
-        [SerializeField, Range(0.2f, 2f)] private float _labelScale = 0.4f;
-        [SerializeField, Min(0f)] private float _labelGapMetres = 0.03f;
+        [SerializeField, Range(0.1f, 2f)] private float _labelScale = 0.2f;
+        [Tooltip("Labels sit this far above the top of their part (label centre).")]
+        [SerializeField, Min(0f)] private float _labelGapMetres = 0.015f;
 
         private enum State { Hidden, Assembled, Exploding, Exploded, Assembling, Disassembling }
 
@@ -288,17 +289,23 @@ namespace EVTrainer.App
             if (_labelTemplate == null) return;
             _labelTexts.Clear();
             _labelAnchors.Clear();
+            var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
             for (int layer = 0; layer < layers && layer < _steps.Count; layer++)
             {
                 var step = _steps[layer];
-                var b = BoundsOfLayer(layer, out int count);
+                // On its own part: centred over the top face, just above it. Bolts: over the bolt nearest the trainee,
+                // so the bolt label never sits on top of the cover's label (the bolts float over the cover).
+                var b = step.IsBolts ? NearestItemBounds(layer, viewer) : BoundsOfLayer(layer, out _);
+                int count = CountOfLayer(layer);
                 if (count == 0) continue;
+                // A part with another exploded layer above it keeps its label on its own top face, near the front edge,
+                // where the layer above does not hide it.
+                float z = IsCoveredFromAbove(layer, b) ? b.min.z + Mathf.Min(CoveredLabelInsetMetres, b.size.z * 0.5f) : b.center.z;
                 _labelTexts.Add(LayerText(step, count));
-                _labelAnchors.Add(new Vector3(b.center.x, b.max.y + _labelGapMetres, b.min.z).ToNumerics()); // just above the layer's top, front edge
+                _labelAnchors.Add(new Vector3(b.center.x, b.max.y + _labelGapMetres, z).ToNumerics());
             }
 
-            var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
-            var placed = _placer.Place(_labelAnchors, viewer.ToNumerics());
+            var placed = _placer.Place(_labelAnchors, viewer.ToNumerics(), LabelMinBearingDegrees, LabelMinElevationDegrees, LabelRaiseStepMetres);
             EnsureLabels(_labelTexts.Count);
             for (int i = 0; i < _labelTexts.Count; i++)
             {
@@ -313,6 +320,45 @@ namespace EVTrainer.App
             if (!_labelsShown) return;
             foreach (var label in _labels) label.Hide();
             _labelsShown = false;
+        }
+
+        // Small labels: only nudged apart when they would really touch as seen by the trainee.
+        private const float LabelMinBearingDegrees = 4f, LabelMinElevationDegrees = 2f, LabelRaiseStepMetres = 0.02f;
+        private const float CoveredLabelInsetMetres = 0.035f;
+
+        /// <summary>True when an item of another layer sits above <paramref name="top"/> (overlapping it seen from above).</summary>
+        private bool IsCoveredFromAbove(int layer, Bounds top)
+        {
+            foreach (var item in _items)
+            {
+                if (item.Layer == layer || _steps[item.Layer].IsBolts) continue; // small floating bolts hide nothing
+                var b = Bounds(item);
+                bool above = b.min.y > top.max.y;
+                bool overlaps = b.min.x < top.max.x && b.max.x > top.min.x && b.min.z < top.max.z && b.max.z > top.min.z;
+                if (above && overlaps) return true;
+            }
+            return false;
+        }
+
+        private int CountOfLayer(int layer)
+        {
+            int n = 0;
+            foreach (var item in _items) if (item.Layer == layer) n++;
+            return n;
+        }
+
+        /// <summary>Bounds of the item of <paramref name="layer"/> nearest the viewer.</summary>
+        private Bounds NearestItemBounds(int layer, Vector3 viewer)
+        {
+            Item best = null;
+            float bestDistance = float.MaxValue;
+            foreach (var item in _items)
+            {
+                if (item.Layer != layer) continue;
+                float d = (item.Transform.position - viewer).sqrMagnitude;
+                if (d < bestDistance) { best = item; bestDistance = d; }
+            }
+            return best != null ? Bounds(best) : new Bounds();
         }
 
         private Bounds BoundsOfLayer(int layer, out int count)

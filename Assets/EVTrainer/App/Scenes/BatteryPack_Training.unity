@@ -9478,7 +9478,7 @@ MonoBehaviour:
   _startPanel: {fileID: 4360011}
   _partLabel: {fileID: 1220447197}
   _labelGapMetres: 0.06
-  _labelScale: 0.4
+  _labelScale: 0.2
   _bolting: {fileID: 1991837944}
   _restartButton: {fileID: 357245425}
   _fader: {fileID: 708385752}
@@ -9648,8 +9648,8 @@ MonoBehaviour:
   _assembleButton: {fileID: 125368983}
   _disassemblyButton: {fileID: 854959857}
   _labelTemplate: {fileID: 1220447197}
-  _labelScale: 0.4
-  _labelGapMetres: 0.03
+  _labelScale: 0.2
+  _labelGapMetres: 0.015
 --- !u!114 &1991837947
 MonoBehaviour:
   m_ObjectHideFlags: 0
