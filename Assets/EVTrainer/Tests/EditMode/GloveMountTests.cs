@@ -25,8 +25,8 @@ namespace EVTrainer.Tests.EditMode
         {
             var g = Held.Rotation;
             Assert.That(Vector3.Dot(Vector3.Transform(Vector3.UnitZ, g), Vector3.UnitY), Is.GreaterThan(0.8f), "+Z up the handle (little finger → thumb)");
-            Assert.That(Vector3.Dot(Vector3.Transform(Vector3.UnitY, g), Vector3.UnitZ), Is.GreaterThan(0.8f), "+Y forward (wrist → knuckles)");
-            Assert.That(Vector3.Dot(Vector3.Transform(Vector3.UnitX, g), -Vector3.UnitX), Is.GreaterThan(0.99f), "+X to the user's left");
+            Assert.That(Vector3.Dot(Vector3.Transform(Vector3.UnitY, g), -Vector3.UnitZ), Is.GreaterThan(0.8f), "+Y back (knuckles → wrist)");
+            Assert.That(Vector3.Dot(Vector3.Transform(Vector3.UnitX, g), Vector3.UnitX), Is.GreaterThan(0.99f), "+X to the user's right");
         }
 
         [TestCase(HandSide.Left)]
@@ -79,14 +79,14 @@ namespace EVTrainer.Tests.EditMode
         }
 
         [Test]
-        public void IdentityGrip_PointsTheFingersUpTheGripY_AsOpenXRDefines()
+        public void IdentityGrip_PointsTheFingersDownTheGripY_AsOpenXRDefines()
         {
-            // Documents the convention: an identity grip rotation (what the Editor simulator shows by default) is a
-            // hand with its fingers along grip +Y, i.e. pointing up, thumb towards +Z. Not a mount error.
+            // Documents the convention: an identity grip rotation (the Editor simulator's default) is a hand with its
+            // fingers along grip -Y, i.e. pointing down, thumb towards +Z. Not a mount error.
             var identity = new PartPose(Chest, Quaternion.Identity);
             var wrist = World(HandSide.Left, "Wrist", identity);
             var middleTip = World(HandSide.Left, "MiddleTip", identity);
-            Assert.That(middleTip.Y - wrist.Y, Is.GreaterThan(0.12f));
+            Assert.That(wrist.Y - middleTip.Y, Is.GreaterThan(0.12f));
         }
 
         [Test]
