@@ -46,13 +46,59 @@ namespace EVTrainer.UI
         private int _targetScore;
         private int _shownScore = -1;
         private float _startTime = -1f;
+        private bool _prewarming;
 
         public bool IsShown => gameObject.activeSelf;
         public int PageCount => _pages.Count;
 
+        private static string[] s_Numbers;
+
+        /// <summary>"0".."100", built once.</summary>
+        private static string[] Numbers
+        {
+            get
+            {
+                if (s_Numbers != null) return s_Numbers;
+                s_Numbers = new string[101];
+                for (int i = 0; i <= 100; i++) s_Numbers[i] = i.ToString();
+                return s_Numbers;
+            }
+        }
+
+        /// <summary>
+        /// Lays every text out once with full-length sample content (call at scene start, behind the fade-in) so the
+        /// text buffers are already sized when the report appears: no allocation spike at the completion moment.
+        /// Leaves the panel hidden.
+        /// </summary>
+        public void Prewarm()
+        {
+            if (gameObject.activeSelf) return;
+            var _ = Numbers;
+            if (_group != null) _group.alpha = 0f;
+            _prewarming = true;
+            gameObject.SetActive(true);
+            const string line = "• Torqued too early · Battery Module 4 · 10m 59s  (critical)\n";
+            Fill(_score, "100");
+            Fill(_badgeText, "Practice summary");
+            Fill(_rowLabels, "Steps in correct order\nWrong-order attempts\nFirst-time fits\nTorque in spec\nCross pattern followed\nCritical mistakes\nTotal time\n");
+            Fill(_rowValues, "<color=#FF7366>10/10</color>\n100\n100%\n10/10\n<color=#FF7366>Yes</color>\n<color=#FF7366>10</color>\n10m 59s\n");
+            Fill(_mistakesTitle, "Mistakes (100)");
+            Fill(_mistakes, "<color=#FF7366>" + line + line + line + "</color>");
+            Fill(_page, "10/10");
+            _prewarming = false;
+            gameObject.SetActive(false);
+        }
+
+        private static void Fill(TMP_Text text, string sample)
+        {
+            if (text == null) return;
+            text.text = sample;
+            text.ForceMeshUpdate(true);
+        }
+
         private void Awake()
         {
-            if (_startTime < 0f) gameObject.SetActive(false);
+            if (_startTime < 0f && !_prewarming) gameObject.SetActive(false);
         }
 
         /// <summary>Shows the report (builds every text now) and animates it in.</summary>
@@ -155,11 +201,11 @@ namespace EVTrainer.UI
             transform.localScale = Vector3.one * Mathf.Lerp(_startScale, 1f, fade);
             float fill = Smooth((t - _fadeSeconds * 0.5f) / _fillSeconds);
             if (_ring != null) _ring.fillAmount = fill * _targetScore / 100f;
-            int shown = Mathf.RoundToInt(fill * _targetScore);
+            int shown = Mathf.Clamp(Mathf.RoundToInt(fill * _targetScore), 0, 100);
             if (shown != _shownScore && _score != null)
             {
                 _shownScore = shown;
-                _score.SetText("{0}", shown);
+                _score.text = Numbers[shown]; // cached strings: the count-up allocates nothing
             }
             if (t >= _fadeSeconds * 0.5f + _fillSeconds) _startTime = -1f; // done: stop updating
         }

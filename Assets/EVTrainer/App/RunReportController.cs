@@ -28,6 +28,28 @@ namespace EVTrainer.App
 
         private void Awake() => SetButtons(completed: false);
 
+        // At scene start (behind the fade-in), not at the completion moment: size the report texts and wake the buttons
+        // that first appear on completion (their text components allocate when they first become active).
+        private void Start()
+        {
+            if (_panel != null) _panel.Prewarm();
+            if (_retryTestButton != null) WakeOnce(_retryTestButton.transform.parent);
+            if (_previousPageButton != null) WakeOnce(_previousPageButton.transform.parent);
+        }
+
+        /// <summary>Activates <paramref name="row"/> and all its children for one moment, then restores their states.</summary>
+        private static void WakeOnce(Transform row)
+        {
+            if (row == null) return;
+            bool rowActive = row.gameObject.activeSelf;
+            var states = new bool[row.childCount];
+            for (int i = 0; i < states.Length; i++) states[i] = row.GetChild(i).gameObject.activeSelf;
+            row.gameObject.SetActive(true);
+            for (int i = 0; i < states.Length; i++) row.GetChild(i).gameObject.SetActive(true);
+            for (int i = 0; i < states.Length; i++) row.GetChild(i).gameObject.SetActive(states[i]);
+            row.gameObject.SetActive(rowActive);
+        }
+
         private void OnEnable()
         {
             if (_training != null) _training.Completed += OnCompleted;
