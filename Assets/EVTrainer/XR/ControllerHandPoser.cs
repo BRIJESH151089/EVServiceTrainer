@@ -18,6 +18,17 @@ namespace EVTrainer.XR
         [SerializeField] private Transform _handRoot;
         [SerializeField, Range(0.01f, 0.5f)] private float _easeSeconds = 0.06f;
 
+        [Header("Mount on the controller's OpenXR grip pose (per side)")]
+        [Tooltip("Grip pose axes: +Z through the finger tunnel towards the thumb/thumbstick end, +Y from the wrist " +
+                 "towards the knuckles, +X out of the back of the LEFT hand (into the palm of the right). Hand root " +
+                 "(wrist) position in grip space.")]
+        [SerializeField] private Vector3 _mountPosition = new Vector3(0.03f, -0.07f, 0f);
+        [Tooltip("Hand root rotation in grip space (Euler). The hand's +Z (wrist → fingers) goes along grip +Y, its " +
+                 "+Y (back of the hand) out of the back of the hand.")]
+        [SerializeField] private Vector3 _mountEuler = new Vector3(270f, 270f, 0f); // left; right = (270, 90, 0)
+        [Tooltip("Apply the mount above at start (off: keep the transform as placed in the scene).")]
+        [SerializeField] private bool _applyMount = true;
+
         private sealed class Joint
         {
             public Transform Bone;
@@ -33,6 +44,7 @@ namespace EVTrainer.XR
         private void Awake()
         {
             if (_handRoot == null) _handRoot = transform;
+            if (_applyMount) _handRoot.SetLocalPositionAndRotation(_mountPosition, Quaternion.Euler(_mountEuler));
             Transform palm = Find("Palm");
             var palmDown = palm != null ? -palm.up : -_handRoot.up;
             foreach (Finger finger in System.Enum.GetValues(typeof(Finger)))
