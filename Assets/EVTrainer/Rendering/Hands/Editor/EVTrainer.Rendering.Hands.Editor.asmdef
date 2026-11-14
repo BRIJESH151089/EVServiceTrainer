@@ -2,7 +2,8 @@
     "name": "EVTrainer.Rendering.Hands.Editor",
     "rootNamespace": "EVTrainer.Rendering.Hands.Editor",
     "references": [
-        "EVTrainer.Rendering"
+        "EVTrainer.Rendering",
+        "EVTrainer.Core"
     ],
     "includePlatforms": [
         "Editor"

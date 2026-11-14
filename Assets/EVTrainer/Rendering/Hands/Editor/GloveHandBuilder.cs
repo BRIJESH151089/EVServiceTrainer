@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EVTrainer.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,7 +10,10 @@ namespace EVTrainer.Rendering.Hands.Editor
     /// segments with rounded tips, and a wrist cuff (accent material). Skinned to a bone hierarchy that matches the
     /// XR Hands joint layout (L_/R_ Wrist, Palm, and per finger Metacarpal/Proximal/Intermediate/Distal/Tip; the thumb
     /// has Metacarpal/Proximal/Distal/Tip), so the XR Hands skeleton driver and the controller finger poser drive it.
-    /// Bind pose: palm down, fingers along +Z, back of the hand +Y (OpenXR joint convention); left thumb on +X.
+    /// Glove local axes (Core <see cref="GloveHandLayout"/>, the joint positions come from there too), both hands:
+    /// +Z = forward, wrist → middle finger; +Y = out of the back of the hand (palm normal = -Y); thumb side = +X on
+    /// the LEFT hand and -X on the RIGHT. The right hand is a true mirror: joint X negated, and every triangle is
+    /// wound from its own geometry (outward from its part), so no negative scale is needed anywhere.
     /// Each finger segment hangs on a leaf "_Seg" bone so it can be stretched to tracked lengths.
     /// Output: Assets/EVTrainer/Rendering/Hands/GloveHand{Left,Right}.asset (mesh) and .prefab.
     /// </summary>
@@ -17,26 +21,6 @@ namespace EVTrainer.Rendering.Hands.Editor
     {
         private const string Folder = "Assets/EVTrainer/Rendering/Hands";
         private const int Sides = 8;
-
-        // Average adult hand, left side, metres, relative to the wrist joint.
-        private static readonly Dictionary<string, Vector3> Joints = new Dictionary<string, Vector3>
-        {
-            ["Palm"] = new Vector3(0.000f, 0.002f, 0.050f),
-            ["ThumbMetacarpal"] = new Vector3(0.024f, -0.010f, 0.020f), ["ThumbProximal"] = new Vector3(0.046f, -0.016f, 0.052f),
-            ["ThumbDistal"] = new Vector3(0.060f, -0.018f, 0.082f), ["ThumbTip"] = new Vector3(0.070f, -0.018f, 0.104f),
-            ["IndexMetacarpal"] = new Vector3(0.020f, 0.002f, 0.012f), ["IndexProximal"] = new Vector3(0.024f, 0.004f, 0.090f),
-            ["IndexIntermediate"] = new Vector3(0.026f, 0.004f, 0.130f), ["IndexDistal"] = new Vector3(0.027f, 0.003f, 0.154f),
-            ["IndexTip"] = new Vector3(0.028f, 0.002f, 0.176f),
-            ["MiddleMetacarpal"] = new Vector3(0.005f, 0.003f, 0.012f), ["MiddleProximal"] = new Vector3(0.004f, 0.005f, 0.093f),
-            ["MiddleIntermediate"] = new Vector3(0.004f, 0.005f, 0.138f), ["MiddleDistal"] = new Vector3(0.004f, 0.004f, 0.166f),
-            ["MiddleTip"] = new Vector3(0.004f, 0.003f, 0.190f),
-            ["RingMetacarpal"] = new Vector3(-0.010f, 0.002f, 0.012f), ["RingProximal"] = new Vector3(-0.014f, 0.004f, 0.087f),
-            ["RingIntermediate"] = new Vector3(-0.017f, 0.004f, 0.128f), ["RingDistal"] = new Vector3(-0.019f, 0.003f, 0.154f),
-            ["RingTip"] = new Vector3(-0.020f, 0.002f, 0.176f),
-            ["LittleMetacarpal"] = new Vector3(-0.022f, 0.000f, 0.012f), ["LittleProximal"] = new Vector3(-0.031f, 0.000f, 0.077f),
-            ["LittleIntermediate"] = new Vector3(-0.037f, 0.000f, 0.108f), ["LittleDistal"] = new Vector3(-0.041f, -0.001f, 0.128f),
-            ["LittleTip"] = new Vector3(-0.044f, -0.002f, 0.148f),
-        };
 
         // Chains (joint order) and per-segment radii (start, end).
         private static readonly (string[] chain, Vector2[] radii)[] Fingers =
@@ -84,7 +68,8 @@ namespace EVTrainer.Rendering.Hands.Editor
             string side = left ? "Left" : "Right";
             char p = left ? 'L' : 'R';
             float mirror = left ? 1f : -1f;
-            Vector3 Pos(string joint) => Vector3.Scale(Joints[joint], new Vector3(mirror, 1f, 1f));
+            var hand = left ? HandSide.Left : HandSide.Right;
+            Vector3 Pos(string joint) { var j = GloveHandLayout.Joint(joint, hand); return new Vector3(j.X, j.Y, j.Z); } // true mirror for the right hand
 
             // Bone hierarchy (world = root space at bind).
             var root = new GameObject("GloveHand" + side);
