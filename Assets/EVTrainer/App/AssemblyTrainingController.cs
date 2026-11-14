@@ -51,7 +51,7 @@ namespace EVTrainer.App
         [SerializeField] private PartLabelView _partLabel;
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.04f;
         [Tooltip("Label size relative to the template.")]
-        [SerializeField, Range(0.1f, 2f)] private float _labelScale = 0.2f;
+        [SerializeField, Range(0.1f, 2f)] private float _labelScale = 0.4f;
         [Tooltip("Bolt hand-start and torque wrench flow (optional; modules without bolts leave it empty).")]
         [SerializeField] private BoltingController _bolting;
         [Tooltip("Physical Restart push button (within reach). Back to mode selection with all parts staged.")]

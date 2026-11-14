@@ -28,7 +28,7 @@ namespace EVTrainer.App
         [SerializeField] private PushButtonView _disassemblyButton;
         [Tooltip("Template for the name labels shown while the assembly is apart.")]
         [SerializeField] private PartLabelView _labelTemplate;
-        [SerializeField, Range(0.1f, 2f)] private float _labelScale = 0.2f;
+        [SerializeField, Range(0.1f, 2f)] private float _labelScale = 0.4f;
         [Tooltip("Labels sit this far above the top of their part (label centre).")]
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.015f;
 

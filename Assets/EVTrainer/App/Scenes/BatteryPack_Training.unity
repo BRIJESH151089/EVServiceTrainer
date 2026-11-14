@@ -5285,6 +5285,10 @@ PrefabInstance:
       propertyPath: _viewer
       value: 
       objectReference: {fileID: 708385748}
+    - target: {fileID: 8607993705289780079, guid: 0af62a431fcad864ca97a3242628f748, type: 3}
+      propertyPath: _fitToText
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9125668468169263685, guid: 0af62a431fcad864ca97a3242628f748, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -9478,7 +9482,7 @@ MonoBehaviour:
   _startPanel: {fileID: 4360011}
   _partLabel: {fileID: 1220447197}
   _labelGapMetres: 0.06
-  _labelScale: 0.2
+  _labelScale: 0.4
   _bolting: {fileID: 1991837944}
   _restartButton: {fileID: 357245425}
   _fader: {fileID: 708385752}
@@ -9648,7 +9652,7 @@ MonoBehaviour:
   _assembleButton: {fileID: 125368983}
   _disassemblyButton: {fileID: 854959857}
   _labelTemplate: {fileID: 1220447197}
-  _labelScale: 0.2
+  _labelScale: 0.4
   _labelGapMetres: 0.015
 --- !u!114 &1991837947
 MonoBehaviour:
