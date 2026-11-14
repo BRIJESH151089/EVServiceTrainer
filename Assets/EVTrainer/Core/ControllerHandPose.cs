@@ -50,6 +50,9 @@ namespace EVTrainer.Core
         /// <summary>Curl with nothing pressed: the hand still loosely holds the controller handle.</summary>
         public const float RestCurl = 0.35f;
 
+        /// <summary>Pointing to poke a button: index straight (at the poke point), the others closed, thumb resting.</summary>
+        public static FingerCurls Pointing => new FingerCurls(thumb: 0.6f, index: 0f, middle: 1f, ring: 1f, little: 1f);
+
         /// <summary>Target curls for the current grip / trigger values (0..1).</summary>
         public static FingerCurls FromInput(float grip, float trigger)
         {
