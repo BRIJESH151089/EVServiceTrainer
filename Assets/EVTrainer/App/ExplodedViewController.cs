@@ -28,7 +28,7 @@ namespace EVTrainer.App
         [SerializeField] private PushButtonView _disassemblyButton;
         [Tooltip("Template for the name labels shown while the assembly is apart.")]
         [SerializeField] private PartLabelView _labelTemplate;
-        [SerializeField, Range(0.2f, 2f)] private float _labelScale = 0.7f;
+        [SerializeField, Range(0.2f, 2f)] private float _labelScale = 0.4f;
         [SerializeField, Min(0f)] private float _labelGapMetres = 0.03f;
 
         private enum State { Hidden, Assembled, Exploding, Exploded, Assembling, Disassembling }
@@ -294,7 +294,7 @@ namespace EVTrainer.App
                 var b = BoundsOfLayer(layer, out int count);
                 if (count == 0) continue;
                 _labelTexts.Add(LayerText(step, count));
-                _labelAnchors.Add(new Vector3(b.center.x, b.center.y, b.min.z - _labelGapMetres).ToNumerics()); // in front of the layer, facing the trainee
+                _labelAnchors.Add(new Vector3(b.center.x, b.max.y + _labelGapMetres, b.min.z).ToNumerics()); // just above the layer's top, front edge
             }
 
             var viewer = Camera.main != null ? Camera.main.transform.position : Vector3.up * 1.6f;
