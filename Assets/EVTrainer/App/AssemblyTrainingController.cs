@@ -292,7 +292,9 @@ namespace EVTrainer.App
                 // The read-only info panel is always up: steps preview, neutral badge, where to choose.
                 _hud.Render(Progress, null);
                 _hud.ShowModeNotChosen();
-                _hud.ShowNotice("Choose Learn or Test with the buttons below.", warning: false);
+                // Last saved run (read once here, at scene start behind the fade-in): "Last result: PASS 91% · 4m 48s".
+                _hud.ShowNotice("Choose Learn or Test with the buttons below.\n" + ReportFormat.LastResult(ReportStore.LoadLatest()),
+                    warning: false);
             }
             RefreshGhosts();
             DevLog.Info($"Waiting for mode selection ({_definition.Title}); parts locked until then.");
