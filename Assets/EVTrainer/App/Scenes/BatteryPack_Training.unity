@@ -7674,6 +7674,7 @@ MonoBehaviour:
   _rightHandVisual: {fileID: 1331403809}
   _showJointDebug: 0
   _panelRefreshHz: 15
+  _debugAxisMaterial: {fileID: 2100000, guid: cfc07993d040fd84cba9009f86b00035, type: 2}
 --- !u!114 &1991837941
 MonoBehaviour:
   m_ObjectHideFlags: 0

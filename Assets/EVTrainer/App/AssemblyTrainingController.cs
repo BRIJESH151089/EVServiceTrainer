@@ -60,7 +60,7 @@ namespace EVTrainer.App
         [SerializeField] private ScreenFader _fader;
 
         // Debug-only fields: release builds compile their use out (see Awake and Update), so silence "never used".
-#pragma warning disable CS0414
+#pragma warning disable CS0414, CS0649
         [Header("Debug panel")]
         [SerializeField] private DebugPanelView _debugPanel;
         [Tooltip("Shows/hides the debug panel (left X button; F2 in the Editor).")]
@@ -76,12 +76,15 @@ namespace EVTrainer.App
         [Tooltip("Debug: draw the tracked joints as spheres (the skinned hand meshes are the normal visual).")]
         [SerializeField] private bool _showJointDebug;
         [SerializeField, Min(1f)] private float _panelRefreshHz = 15f;
+        [Tooltip("Development builds: unlit material for the RGB axis gizmos at the controller grip poses and glove " +
+                 "wrists (shown with the debug panel).")]
+        [SerializeField] private Material _debugAxisMaterial;
 
         private readonly List<string> _ghostSlots = new List<string>();
         private AssemblyDefinition _definition;
         private float _nextPanelRefresh;
         private string _lastInstallText;
-#pragma warning restore CS0414
+#pragma warning restore CS0414, CS0649
         private float _runStartTime;
         private InstallResult? _lastEvaluation;
 
@@ -130,8 +133,22 @@ namespace EVTrainer.App
             _rightHandVisual = null;
             _interactorStatus = null;
             _debugToggle = null;
+#else
+            // Development: RGB axes at each controller's grip pose and at each glove wrist, shown with the debug panel.
+            if (_debugAxisMaterial != null)
+            {
+                foreach (var poser in FindObjectsByType<ControllerHandPoser>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (poser.transform.parent != null) _axisGizmos.Add(AxisGizmo.Create(poser.transform.parent, _debugAxisMaterial, 0.08f));
+                    _axisGizmos.Add(AxisGizmo.Create(poser.Wrist, _debugAxisMaterial, 0.05f));
+                }
+            }
 #endif
         }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private readonly List<AxisGizmo> _axisGizmos = new List<AxisGizmo>();
+#endif
 
         /// <summary>True once a mode has been chosen and the run has started.</summary>
         public bool IsRunning { get; private set; }
@@ -421,6 +438,8 @@ namespace EVTrainer.App
                 _debugPanel.gameObject.SetActive(!_debugPanel.gameObject.activeSelf);
                 _nextPanelRefresh = 0f;
             }
+            bool axes = _debugPanel != null && _debugPanel.gameObject.activeSelf;
+            for (int i = 0; i < _axisGizmos.Count; i++) _axisGizmos[i].SetVisible(axes);
             UpdateDebugPanel();
 #endif
         }
