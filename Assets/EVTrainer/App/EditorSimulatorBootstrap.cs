@@ -51,7 +51,8 @@ namespace EVTrainer.App
             var instance = Object.Instantiate(prefab);
             instance.name = prefab.name;
             Object.DontDestroyOnLoad(instance);
-            DevLog.Info($"No XR headset active: spawned '{PrefabName}' for in-Editor testing.");
+            SimulatorGripPose.Attach(instance); // controllers held like on the Quest, not at identity (fingers up)
+            DevLog.Info($"No XR headset active: spawned '{PrefabName}' for in-Editor testing (controllers held straight ahead).");
         }
 
         private static GameObject FindSimulatorPrefab()
