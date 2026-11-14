@@ -134,13 +134,16 @@ namespace EVTrainer.App
             _interactorStatus = null;
             _debugToggle = null;
 #else
-            // Development: RGB axes at each controller's grip pose and at each glove wrist, shown with the debug panel.
+            // Development: RGB axes at each controller's grip pose (= its grab point), glove wrist and poke point, shown
+            // with the debug panel, which also lists the poke and grab positions.
+            _posers.AddRange(FindObjectsByType<ControllerHandPoser>(FindObjectsInactive.Include, FindObjectsSortMode.None));
             if (_debugAxisMaterial != null)
             {
-                foreach (var poser in FindObjectsByType<ControllerHandPoser>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (var poser in _posers)
                 {
                     if (poser.transform.parent != null) _axisGizmos.Add(AxisGizmo.Create(poser.transform.parent, _debugAxisMaterial, 0.08f));
                     _axisGizmos.Add(AxisGizmo.Create(poser.Wrist, _debugAxisMaterial, 0.05f));
+                    if (poser.PokePoint != null) _axisGizmos.Add(AxisGizmo.Create(poser.PokePoint, _debugAxisMaterial, 0.03f, 0.002f));
                 }
             }
 #endif
@@ -148,6 +151,22 @@ namespace EVTrainer.App
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private readonly List<AxisGizmo> _axisGizmos = new List<AxisGizmo>();
+        private readonly List<ControllerHandPoser> _posers = new List<ControllerHandPoser>();
+
+        /// <summary>Debug panel: each controller's poke point and grab point (grip pose) in world space.</summary>
+        private string ControllerPointsText()
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var poser in _posers)
+            {
+                var grip = poser.transform.parent;
+                sb.Append('\n').Append(poser.Side).Append(" controller: grab ")
+                  .Append(grip != null ? grip.position.ToString("F3") : "-")
+                  .Append(" | poke ").Append(poser.PokePoint != null ? poser.PokePoint.position.ToString("F3") : "-")
+                  .Append(poser.IsPointing ? " | pointing" : "");
+            }
+            return sb.ToString();
+        }
 #endif
 
         /// <summary>True once a mode has been chosen and the run has started.</summary>
@@ -585,6 +604,7 @@ namespace EVTrainer.App
             bool panelActive = _startPanel != null && _startPanel.gameObject.activeInHierarchy;
             string head = $"Mode: {mode} | start panel: {(panelActive ? "shown" : "hidden")} | grabbable parts: {GrabbableCount()}/{_parts.Length}";
             if (_bolting != null) head += "\n" + _bolting.DescribeWrench();
+            head += ControllerPointsText();
             return _interactorStatus != null ? head + "\n" + _interactorStatus.Describe() : head;
         }
 
