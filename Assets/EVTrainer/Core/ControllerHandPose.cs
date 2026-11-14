@@ -42,12 +42,13 @@ namespace EVTrainer.Core
 
     /// <summary>
     /// Hand pose shown on a controller: grip closes the middle, ring and little fingers (and the thumb), the trigger
-    /// curls the index finger. A relaxed hand keeps a slight curl; curls ease towards their targets so the hand
-    /// never snaps between poses.
+    /// curls the index finger. A relaxed hand stays loosely curled round the handle; curls ease towards their targets
+    /// so the hand never snaps between poses.
     /// </summary>
     public static class ControllerHandPose
     {
-        public const float RestCurl = 0.12f;
+        /// <summary>Curl with nothing pressed: the hand still loosely holds the controller handle.</summary>
+        public const float RestCurl = 0.35f;
 
         /// <summary>Target curls for the current grip / trigger values (0..1).</summary>
         public static FingerCurls FromInput(float grip, float trigger)

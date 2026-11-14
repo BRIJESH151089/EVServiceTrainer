@@ -6,6 +6,9 @@ namespace EVTrainer.Tests.EditMode
 {
     public class ControllerHandPoseTests
     {
+        /// <summary>Half way between the relaxed curl and a full curl.</summary>
+        private static float Halfway => (ControllerHandPose.RestCurl + 1f) * 0.5f;
+
         [Test]
         public void Released_IsARelaxedOpenHand()
         {
@@ -21,7 +24,7 @@ namespace EVTrainer.Tests.EditMode
             Assert.That(c.Ring, Is.EqualTo(1f));
             Assert.That(c.Little, Is.EqualTo(1f));
             Assert.That(c.Thumb, Is.EqualTo(0.75f).Within(1e-5f));
-            Assert.That(c.Index, Is.LessThan(0.5f), "index stays loose so the trigger can still curl it");
+            Assert.That(c.Index, Is.LessThan(Halfway), "index stays loose so the trigger can still curl it");
         }
 
         [Test]
@@ -30,7 +33,7 @@ namespace EVTrainer.Tests.EditMode
             var c = ControllerHandPose.FromInput(0f, 1f);
             Assert.That(c.Index, Is.EqualTo(1f));
             Assert.That(c.Middle, Is.EqualTo(ControllerHandPose.RestCurl).Within(1e-5f));
-            Assert.That(ControllerHandPose.FromInput(0f, 0.5f).Index, Is.InRange(0.5f, 0.6f));
+            Assert.That(ControllerHandPose.FromInput(0f, 0.5f).Index, Is.EqualTo(Halfway).Within(1e-5f), "half trigger = half way from rest to curled");
         }
 
         [Test]
@@ -38,7 +41,7 @@ namespace EVTrainer.Tests.EditMode
         {
             var c = ControllerHandPose.FromInput(2f, float.NaN);
             Assert.That(c.Middle, Is.EqualTo(1f));
-            Assert.That(c.Index, Is.LessThan(0.5f));
+            Assert.That(c.Index, Is.LessThan(Halfway));
             Assert.That(new FingerCurls(-1f, 5f, 0.5f, 0.5f, 0.5f).Index, Is.EqualTo(1f));
         }
 
