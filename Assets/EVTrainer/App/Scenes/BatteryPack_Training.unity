@@ -3416,31 +3416,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.03
+      value: -0.025000002
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.07
+      value: -0.049149122
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.034414586
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.5
+      value: 0.6272114
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.5
+      value: -0.32650557
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.5
+      value: 0.32650557
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.5
+      value: 0.6272114
       objectReference: {fileID: 0}
     - target: {fileID: 3787125540341679050, guid: ec04ab8afb45ce843a385597afca8b9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3499,8 +3499,9 @@ MonoBehaviour:
   _input: {fileID: 2024528488}
   _handRoot: {fileID: 954895512}
   _easeSeconds: 0.06
-  _mountPosition: {x: -0.03, y: -0.07, z: 0}
-  _mountEuler: {x: 270, y: 90, z: 0}
+  _side: 1
+  _gripPointInGlove: {x: 0, y: -0.025, z: 0.06}
+  _handTiltDegrees: 35
   _applyMount: 1
 --- !u!1001 &997960546
 PrefabInstance:
@@ -3512,31 +3513,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.03
+      value: 0.025000002
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.07
+      value: -0.049149122
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.034414586
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.5
+      value: 0.6272114
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.5
+      value: -0.32650557
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.5
+      value: -0.32650557
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.5
+      value: -0.6272114
       objectReference: {fileID: 0}
     - target: {fileID: 3650742222280704888, guid: a5c7187141e77d648a337ff266349b90, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3595,8 +3596,9 @@ MonoBehaviour:
   _input: {fileID: 1133238693}
   _handRoot: {fileID: 997960548}
   _easeSeconds: 0.06
-  _mountPosition: {x: 0.03, y: -0.07, z: 0}
-  _mountEuler: {x: 270, y: 270, z: 0}
+  _side: 0
+  _gripPointInGlove: {x: 0, y: -0.025, z: 0.06}
+  _handTiltDegrees: 35
   _applyMount: 1
 --- !u!1001 &999603902
 PrefabInstance:
