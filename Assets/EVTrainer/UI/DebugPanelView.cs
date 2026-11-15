@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace EVTrainer.UI
 {
-    /// <summary>Everything the Phase 1 debug panel shows, as plain data.</summary>
+    /// <summary>Everything the development debug panel shows, as plain data.</summary>
     public readonly struct DebugPanelData
     {
         public DebugPanelData(InputFrame left, InputFrame right, bool isHeld, string heldBy,
