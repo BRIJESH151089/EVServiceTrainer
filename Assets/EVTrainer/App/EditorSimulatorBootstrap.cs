@@ -11,13 +11,13 @@ namespace EVTrainer.App
     /// Editor-only: when entering Play Mode with no XR headset active, spawns the XRI
     /// "XR Interaction Simulator" prefab if that package sample has been imported into Assets/Samples.
     /// Holds no serialized reference to sample assets, so nothing breaks when the sample is absent.
-    /// Toggle with the menu EVTrainer > XR Simulator in Play Mode.
+    /// Toggle with the menu EV Trainer > XR Simulator in Play Mode.
     /// </summary>
     internal static class EditorSimulatorBootstrap
     {
         private const string PrefabName = "XR Interaction Simulator";
         private const string SamplesFolder = "Assets/Samples";
-        private const string MenuPath = "EVTrainer/XR Simulator in Play Mode";
+        private const string MenuPath = "EV Trainer/XR Simulator in Play Mode";
         private const string EnabledPrefKey = "EVTrainer.XRSimulatorInPlayMode";
 
         private static bool Enabled
