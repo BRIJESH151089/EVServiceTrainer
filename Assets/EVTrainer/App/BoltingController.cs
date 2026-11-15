@@ -93,6 +93,7 @@ namespace EVTrainer.App
         private string _refusedHole;       // last bolt the wrench was refused on (don't repeat the message while it stays there)
         private float _hapticAccumulator;
         private float _lastHandleAngle;
+        private bool _wrenchHomedAfterCompletion;
         private float _wrenchTopAboveOrigin; // top of the wrench mesh along its socket axis, from its origin (measured once)
         private string _boltGroupName;     // label texts are refreshed every few frames: build each once
         private readonly GroupTextCache _groupTexts = new GroupTextCache();
@@ -186,6 +187,7 @@ namespace EVTrainer.App
                 if (rt.Tint != null) rt.Tint.SetHighlighted(rt.Adapter.IsHovered && !rt.Adapter.IsHeld);
             }
             if (_wrenchTint != null) _wrenchTint.SetHighlighted(_wrench.IsHovered && !_wrench.IsHeld);
+            HomeWrenchWhenComplete();
             UpdateWrench();
             UpdateNumbers();
             UpdateGhosts();
@@ -432,6 +434,13 @@ namespace EVTrainer.App
             _refusedHole = null;
             var set = Set;
             var data = Data;
+            if (_training != null && _training.IsCompleted)
+            {
+                // Module done: no more torquing, so let go anywhere it goes back to the stand.
+                _wrenchRelease = ToolRelease.ReturnHome;
+                SendWrenchHome();
+                return;
+            }
             bool attached = _wrenchHole != null && set != null;
             bool finished = attached && set.Get(_wrenchHole).IsFinished;
             var position = _wrench.transform.position;
@@ -454,6 +463,24 @@ namespace EVTrainer.App
                     _wrench.ReturnHome(data != null ? data.toolReturnSeconds : 0.6f);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Once the module is complete, a wrench left floating or parked glides back to its stand (once), so it never
+        /// hangs in front of the report or over the exploded view. One still in the hand goes home when let go.
+        /// </summary>
+        private void HomeWrenchWhenComplete()
+        {
+            if (_wrenchHomedAfterCompletion || _wrench == null || _training == null || !_training.IsCompleted) return;
+            if (_wrench.IsHeld) return; // OnWrenchReleased sends it home
+            _wrenchHomedAfterCompletion = true;
+            if (!_wrench.IsReturningHome) SendWrenchHome();
+        }
+
+        private void SendWrenchHome()
+        {
+            if (_wrenchHole != null) Detach();
+            _wrench.ReturnHome(Data != null ? Data.toolReturnSeconds : 0.6f);
         }
 
         /// <summary>Picked up again while parked on a bolt: continue from where the handle is.</summary>
