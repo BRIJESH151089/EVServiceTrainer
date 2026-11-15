@@ -57,6 +57,8 @@ namespace EVTrainer.App
         [Header("Learn: pattern numbers")]
         [SerializeField] private FloatingNumberView _numberPrefab;
         [SerializeField, Min(0f)] private float _numberHeightMetres = 0.05f;
+        [Tooltip("While the wrench is on a bolt, that bolt's number sits this far above the top of the wrench head.")]
+        [SerializeField, Min(0f)] private float _numberAboveWrenchMetres = 0.008f;
 
         [Header("Bolt colours")]
         [SerializeField] private Color _startedColor = new Color(0.95f, 0.8f, 0.15f);
@@ -91,6 +93,7 @@ namespace EVTrainer.App
         private string _refusedHole;       // last bolt the wrench was refused on (don't repeat the message while it stays there)
         private float _hapticAccumulator;
         private float _lastHandleAngle;
+        private float _wrenchTopAboveOrigin; // top of the wrench mesh along its socket axis, from its origin (measured once)
         private string _boltGroupName;     // label texts are refreshed every few frames: build each once
         private readonly GroupTextCache _groupTexts = new GroupTextCache();
 
@@ -113,7 +116,25 @@ namespace EVTrainer.App
             {
                 _wrenchTint = _wrench.GetComponent<PartTint>();
                 if (_wrenchTint == null) _wrenchTint = _wrench.gameObject.AddComponent<PartTint>();
+                _wrenchTopAboveOrigin = TopAboveOrigin(_wrench.transform);
             }
+        }
+
+        /// <summary>Highest point of <paramref name="root"/>'s meshes along its up axis (its socket axis), from its origin.</summary>
+        private static float TopAboveOrigin(Transform root)
+        {
+            float top = 0f;
+            foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null) continue;
+                var b = filter.sharedMesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    top = Mathf.Max(top, root.InverseTransformPoint(filter.transform.TransformPoint(corner)).y);
+                }
+            }
+            return top;
         }
 
         private void OnEnable()
@@ -577,7 +598,15 @@ namespace EVTrainer.App
                     : bolt.IsFinished ? FloatingNumberView.Look.Done
                     : hole == next ? FloatingNumberView.Look.Next
                     : FloatingNumberView.Look.Normal;
-                view.Show(set.Pattern.SequenceNumber(hole), pos + axis * _numberHeightMetres, look);
+                float height = _numberHeightMetres;
+                if (hole == _wrenchHole && _wrench != null)
+                {
+                    // The wrench sits on this bolt (driven to hole + axis * MouthToOrigin): lift the number clear of
+                    // the head, its lower edge just above the wrench top.
+                    float halfNumber = view.transform is RectTransform rect ? rect.rect.height * 0.5f * view.transform.lossyScale.y : 0f;
+                    height = Mathf.Max(height, _wrench.MouthToOrigin + _wrenchTopAboveOrigin + _numberAboveWrenchMetres + halfNumber);
+                }
+                view.Show(set.Pattern.SequenceNumber(hole), pos + axis * height, look);
             }
         }
 
