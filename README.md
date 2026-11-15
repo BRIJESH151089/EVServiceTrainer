@@ -17,9 +17,9 @@ report that is also saved as JSON.
 
 | | |
 |---|---|
-| ![Learn mode: ghost target and step list](docs/media/learn-ghost.png) | ![Wrong order: part rejected with the reason](docs/media/wrong-order.png) |
-| ![Two-hand pack cover lift](docs/media/two-hand-cover.png) | ![Torque wrench on the cross pattern](docs/media/torque-pattern.png) |
-| ![Completion report with score and PASS/FAIL](docs/media/report.png) | ![Exploded view review](docs/media/exploded-view.png) |
+| ![Learn mode: ghost target and step list](docs/media/learn-ghost.png)<br>Learn mode: ghost target and step list | ![Torque wrench on the cross pattern](docs/media/torque-pattern.png)<br>Torque wrench on the cross pattern |
+| ![Over-torque detected in Test mode](docs/media/over-torque.png)<br>Over-torque detected in Test mode | ![Exploded view review](docs/media/exploded-view.png)<br>Exploded view review |
+| ![Learn: practice summary](docs/media/report.png)<br>Learn: practice summary | ![Test: PASS/FAIL assessment](docs/media/report-fail.png)<br>Test: PASS/FAIL assessment |
 
 ---
 
