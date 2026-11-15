@@ -9,9 +9,11 @@ cover bolts in a cross pattern to specification. Every action is validated again
 with ghost targets and explanations; Test mode stays silent, logs every mistake and ends with a scored PASS / FAIL
 report that is also saved as JSON.
 
-![EV Service Trainer: battery pack assembly on the Quest](docs/media/hero.gif)
+[![EV Service Trainer demo](https://img.youtube.com/vi/n1DO1EG7Qcg/maxresdefault.jpg)](https://youtu.be/n1DO1EG7Qcg)
 
-▶ **Demo video:** [Watch on YouTube](https://www.youtube.com/watch?v=VIDEO_ID)
+[▶ Watch the demo (1:45)](https://youtu.be/n1DO1EG7Qcg)
+
+![EV Service Trainer: battery pack assembly on the Quest](docs/media/hero.gif)
 
 | | |
 |---|---|
