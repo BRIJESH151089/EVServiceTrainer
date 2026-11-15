@@ -53,7 +53,9 @@ ExportedObj/
 # Unity3D generated file on crash reports
 sysinfo.txt
 
-# ---- Builds ----
+# ---- Builds and run output ----
+# Training reports pulled from the headset (adb pull)
+reports/
 *.apk
 *.aab
 *.unitypackage
@@ -78,8 +80,6 @@ CLAUDE.md
 # Unity build tool temp
 /.utmp/
 
-# Imported package samples and third-party hand assets are reference only (never commit them)
-/[Aa]ssets/[Ss]amples/
-/[Aa]ssets/[Ss]amples.meta
+# Third-party hand assets are reference only (never commit them)
 /[Aa]ssets/EVTrainer/Rendering/ThirdParty/
 /[Aa]ssets/EVTrainer/Rendering/ThirdParty.meta
